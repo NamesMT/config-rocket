@@ -31,10 +31,6 @@
 + `CR` for developers:
   + Easily extendable, add your own rules and functionalities via hooks support, for example: [Roo Rocket](https://github.com/NamesMT/roo-rocket)
 
-## Features
-
-- [x] TypeScript ready!
-
 ## Usage
 
 ### For users
