@@ -1,25 +1,18 @@
-import type { Hooks } from 'hookable'
+import type { Hookable, Hooks } from 'hookable'
 import { readFile } from 'node:fs/promises'
 import { replaceMap } from '@namesmt/utils'
-import { Hookable } from 'hookable'
 import { resolve } from 'pathe'
 import { glob } from 'tinyglobby'
 import simpleWriteFileWithDirs from '~/helpers/fs/simpleWriteFileWithDirs'
 import { logger } from '~/helpers/logger'
 import { parseRocketConfig, supplyFuel } from './config'
 
-interface RocketAssembleHooks extends Hooks {
+export interface RocketAssembleHooks extends Hooks {
   onFrameFile: (args: {
     filePath: string
     setFilePath: (newFilePath: string) => void
     skipFile: () => void
   }) => void | Promise<void>
-}
-
-export default class RocketAssembleHookable extends Hookable<RocketAssembleHooks> {
-  constructor() {
-    super()
-  }
 }
 
 export interface SimpleRocketAssembleOptions {
@@ -46,7 +39,7 @@ export interface SimpleRocketAssembleOptions {
   /**
    * A hookable instance to hook into the rocket assemble process.
    */
-  assembleHookable?: RocketAssembleHookable
+  hookable?: Hookable<RocketAssembleHooks>
 }
 export async function simpleRocketAssemble(options: SimpleRocketAssembleOptions) {
   const {
@@ -54,7 +47,7 @@ export async function simpleRocketAssemble(options: SimpleRocketAssembleOptions)
     variables,
     excludes,
     outDir,
-    assembleHookable,
+    hookable,
   } = options
 
   const frameFiles = await glob(resolve(frameDir, '**'), { dot: true, cwd: frameDir })
@@ -69,8 +62,8 @@ export async function simpleRocketAssemble(options: SimpleRocketAssembleOptions)
       _skipFlag = true
     }
 
-    if (assembleHookable) {
-      assembleHookable.callHook('onFrameFile', { filePath, setFilePath, skipFile })
+    if (hookable) {
+      hookable.callHook('onFrameFile', { filePath, setFilePath, skipFile })
     }
 
     if (_skipFlag) {
@@ -120,7 +113,7 @@ export interface RocketAssembleOptions {
   /**
    * A hookable instance to hook into the rocket assemble process.
    */
-  assembleHookable?: RocketAssembleHookable
+  hookable?: Hookable<RocketAssembleHooks>
 }
 export async function rocketAssemble(options: RocketAssembleOptions) {
   const {
@@ -128,7 +121,7 @@ export async function rocketAssemble(options: RocketAssembleOptions) {
     rocketConfig,
     fuelDir,
     outDir,
-    assembleHookable,
+    hookable,
   } = options
 
   const rocketConfigPath = rocketConfig ?? resolve(frameDir, '../rocket.config')
@@ -142,6 +135,6 @@ export async function rocketAssemble(options: RocketAssembleOptions) {
     variables: fueledVariables,
     excludes: resolvedExcludes,
     outDir,
-    assembleHookable,
+    hookable,
   })
 }
