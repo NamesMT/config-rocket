@@ -19,6 +19,10 @@
     ".": {
       "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs"
+    },
+    "./cli": {
+      "types": "./dist/cli.d.mts",
+      "import": "./dist/cli.mjs"
     }
   },
   "source": "./src/index.ts",
@@ -26,7 +30,7 @@
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
   "bin": {
-    "config-rocket": "./dist/cli.mjs"
+    "config-rocket": "./dist/cli-entry.mjs"
   },
   "files": [
     "dist"

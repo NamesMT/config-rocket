@@ -6,9 +6,12 @@ export default defineBuildConfig({
     // Main engine
     'src/index',
 
+    // CLI-specific functions
+    'src/cli',
+
     // CLI app
     {
-      input: 'src/cli',
+      input: 'src/cli-entry',
       declaration: false,
     },
   ],
