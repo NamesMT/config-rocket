@@ -3,7 +3,7 @@
 # Config Rocket
 
 <h3>Easily create and deploy configurable config packs!</h3>
-<img src="./branding.svg" alt="Roo Rocket's logo" width="320"/>
+<img src="./branding.svg" alt="Project's branding image" width="320"/>
 </div>
 
 # config-rocket ![TypeScript heart icon](https://img.shields.io/badge/♡-%23007ACC.svg?logo=typescript&logoColor=white)
@@ -29,7 +29,7 @@
   + Create a GitHub release, or upload it somewhere, and everyone can use it via `config-rocket` CLI!
 
 + `CR` for developers:
-  + Easily extendable, add your own rules and functionalities via hooks support, for example: [Roo Rocket](https://github.com/NamesMT/roo-rocket)
+  + Easily extendable, add your own rules and functionalities via exported functions and hooks support, for example: [Roo Rocket](https://github.com/NamesMT/roo-rocket)
 
 ## Usage
 
