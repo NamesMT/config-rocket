@@ -1,11 +1,11 @@
 import { defineCommand, runMain } from 'citty'
-import { getValidGhRepoReleaseAssets, promptSelectGhAsset } from './cli/gh-repo'
-import { unpackFromUrl } from './cli/unpack'
+import { getValidGhRepoReleaseAssets, promptSelectGhAsset } from '~/cli/gh-repo'
+import { unpackFromUrl } from '~/cli/unpack'
 
 const main = defineCommand({
   meta: {
     name: 'config-rocket',
-    description: 'Roo Rocket CLI',
+    description: 'Config Rocket CLI',
   },
   args: {
     url: {
