@@ -4,7 +4,7 @@ import type { RocketAssembleHooks } from '~/rocket/assemble'
 import { rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { strFromU8, unzip } from 'fflate'
-import simpleWriteFileWithDirs from '~/helpers/fs/simpleWriteFileWithDirs'
+import { fileOutput } from '~/helpers/fs'
 import { logger } from '~/helpers/logger'
 import { rocketAssemble } from '~/rocket/assemble'
 
@@ -48,7 +48,7 @@ export async function unpackFromUrl(url: string, options?: UnpackOptions) {
         return rejectPromise(new Error('Invalid config pack: "rocket.config.json5" not found.'))
 
       for (const [key, value] of Object.entries(unzipped))
-        await simpleWriteFileWithDirs(join('.tmp', key), strFromU8(value))
+        await fileOutput(join('.tmp', key), strFromU8(value))
 
       resolvePromise()
     })

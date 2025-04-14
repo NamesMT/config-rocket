@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises'
 import { replaceMap } from '@namesmt/utils'
 import { resolve } from 'pathe'
 import { glob } from 'tinyglobby'
-import simpleWriteFileWithDirs from '~/helpers/fs/simpleWriteFileWithDirs'
+import { fileOutput } from '~/helpers/fs'
 import { logger } from '~/helpers/logger'
 import { parseRocketConfig, supplyFuel } from './config'
 
@@ -84,7 +84,7 @@ export async function simpleRocketAssemble(options: SimpleRocketAssembleOptions)
     const fileContent = await readFile(resolve(frameDir, filePath), { encoding: 'utf8' })
       .then(content => replaceMap(content, variables))
 
-    await simpleWriteFileWithDirs(resolve(outDir, _filePath), fileContent)
+    await fileOutput(resolve(outDir, _filePath), fileContent)
   }
 }
 
