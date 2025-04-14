@@ -31,8 +31,6 @@ describe('simpleRocketAssemble', () => {
     // Act: Run the assemble function
     await simpleRocketAssemble({
       frameDir,
-      variables: {},
-      excludes: {},
       outDir,
     })
 
@@ -54,7 +52,6 @@ describe('simpleRocketAssemble', () => {
     await simpleRocketAssemble({
       frameDir,
       variables,
-      excludes: {},
       outDir,
     })
 
@@ -75,7 +72,6 @@ describe('simpleRocketAssemble', () => {
     // Act: Run the assemble function
     await simpleRocketAssemble({
       frameDir,
-      variables: {},
       excludes,
       outDir,
     })
@@ -97,8 +93,6 @@ describe('simpleRocketAssemble', () => {
     // Act: Run the assemble function
     await simpleRocketAssemble({
       frameDir,
-      variables: {},
-      excludes: {},
       outDir,
       hookable,
     })
@@ -127,8 +121,6 @@ describe('simpleRocketAssemble', () => {
     // Act: Run the assemble function
     await simpleRocketAssemble({
       frameDir,
-      variables: {},
-      excludes: {},
       outDir,
       hookable,
     })
@@ -156,8 +148,6 @@ describe('simpleRocketAssemble', () => {
     // Act: Run the assemble function
     await simpleRocketAssemble({
       frameDir,
-      variables: {},
-      excludes: {},
       outDir,
       hookable,
     })
@@ -180,8 +170,6 @@ describe('simpleRocketAssemble', () => {
     // Act: Run the assemble function
     await simpleRocketAssemble({
       frameDir,
-      variables: {},
-      excludes: {},
       outDir,
     })
 
@@ -190,5 +178,74 @@ describe('simpleRocketAssemble', () => {
     await expect(readFile(join(outDir, dotfilePath), 'utf-8')).resolves.toBe('Dotfile content')
     await expect(stat(join(outDir, nestedFilePath))).resolves.toBeDefined()
     await expect(readFile(join(outDir, nestedFilePath), 'utf-8')).resolves.toBe('Nested content')
+  })
+
+  it('should create files defined in filesBuilder', async () => {
+    // Arrange
+    const builtFilePath = 'built.txt'
+    const builtFileContent = 'Content from filesBuilder'
+    const filesBuilder = {
+      'builder-key-1': { filePath: builtFilePath, content: builtFileContent },
+    }
+
+    // Act
+    await simpleRocketAssemble({
+      frameDir,
+      filesBuilder,
+      outDir,
+    })
+
+    // Assert
+    const outFileContent = await readFile(join(outDir, builtFilePath), 'utf-8')
+    expect(outFileContent).toBe(builtFileContent)
+  })
+
+  it('should substitute variables in filesBuilder content', async () => {
+    // Arrange
+    const builtFilePath = 'built_template.txt'
+    const templateContent = 'Built by {{builder}}!'
+    const expectedContent = 'Built by Rocket!'
+    const filesBuilder = {
+      'builder-key-2': { filePath: builtFilePath, content: templateContent },
+    }
+    const variables = { '{{builder}}': 'Rocket' }
+
+    // Act
+    await simpleRocketAssemble({
+      frameDir,
+      variables,
+      filesBuilder,
+      outDir,
+    })
+
+    // Assert
+    const outFileContent = await readFile(join(outDir, builtFilePath), 'utf-8')
+    expect(outFileContent).toBe(expectedContent)
+  })
+
+  it('should allow filesBuilder to overwrite files from frameDir', async () => {
+    // Arrange
+    const commonFilePath = 'common.txt'
+    const frameContent = 'Content from frame'
+    const builderContent = 'Content from filesBuilder (overwrite)'
+
+    // Create file in frameDir
+    await writeFile(join(frameDir, commonFilePath), frameContent)
+
+    // Define file in filesBuilder with the same path
+    const filesBuilder = {
+      'builder-key-overwrite': { filePath: commonFilePath, content: builderContent },
+    }
+
+    // Act
+    await simpleRocketAssemble({
+      frameDir,
+      filesBuilder,
+      outDir,
+    })
+
+    // Assert: Check that the content is from filesBuilder
+    const outFileContent = await readFile(join(outDir, commonFilePath), 'utf-8')
+    expect(outFileContent).toBe(builderContent)
   })
 })
