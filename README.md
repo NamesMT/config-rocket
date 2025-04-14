@@ -46,7 +46,9 @@ npx config-rocket --repo="NamesMT/some-app-config"
 
 ### For creators
 
-**TBA**
+* Generate a repo from [`config-packs-template`](https://github.com/NamesMT/config-packs-template)
+  * It's a template to create your own `config packs` for `config-rocket` ecosystem.
+* Start shipping!
 
 ### Community Terms Explained:
 
