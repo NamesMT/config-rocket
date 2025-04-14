@@ -1,6 +1,32 @@
 # Changelog
 
 
+## v0.3.6
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.5...v0.3.6)
+
+### 🚀 Enhancements
+
+- Add `typedoc.yml` workflow ([654e264](https://github.com/namesmt/config-rocket/commit/654e264))
+
+### 📖 Documentation
+
+- **README:** Update ([d1fc29a](https://github.com/namesmt/config-rocket/commit/d1fc29a))
+
+### 🌊 Types
+
+- **RocketConfig:** Add example usage ([cf74e31](https://github.com/namesmt/config-rocket/commit/cf74e31))
+
+### 🏡 Chore
+
+- Exports `helpers/fs` ([52b5cef](https://github.com/namesmt/config-rocket/commit/52b5cef))
+- Test simplify and fix ci ([455b030](https://github.com/namesmt/config-rocket/commit/455b030))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+- Trung Dang ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.3.5
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.4...v0.3.5)
