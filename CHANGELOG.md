@@ -1,6 +1,22 @@
 # Changelog
 
 
+## v0.3.4
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.3...v0.3.4)
+
+### 🩹 Fixes
+
+- **supplyFuelToResolvedFilesBuilder:** Correct fueling logic ([0aedfbe](https://github.com/namesmt/config-rocket/commit/0aedfbe))
+
+### 🏡 Chore
+
+- Remove `required` from `prompt` because it is usable for `multiselect` only ([0b49bcd](https://github.com/namesmt/config-rocket/commit/0b49bcd))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.3.3
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.2...v0.3.3)
