@@ -102,13 +102,15 @@ export async function parseRocketConfig(configOrPath: RocketConfig | string) {
   for (const parameter of config.parameters ?? [])
     resolvedParameters[parameter.id] = await resolveParameter(parameter, resolvedParameters)
 
+  const _injectPossibleParameter = (result: string) => typeof resolvedParameters[result] === 'string' ? resolvedParameters[result] : result
+
   const resolvedVariables: Record<string, string | FuelReference> = {}
   for (const [variableName, resolverValue] of Object.entries(config.variablesResolver ?? {}))
-    resolvedVariables[variableName] = resolveVariable(resolverValue, resolvedParameters)
+    resolvedVariables[variableName] = _injectPossibleParameter(resolveVariable(resolverValue, resolvedParameters))
 
   const resolvedFilesBuilder: Record<string, { filePath: string, content: string | FuelReference }> = {}
   for (const [builderKey, builderConfig] of Object.entries(config.filesBuildResolver ?? {})) {
-    const resolvedContent = resolveVariable(builderConfig.content, resolvedParameters) // Re-use resolveVariable logic
+    const resolvedContent = _injectPossibleParameter(resolveVariable(builderConfig.content, resolvedParameters)) // Re-use resolveVariable logic
     resolvedFilesBuilder[builderKey] = { filePath: builderConfig.filePath, content: resolvedContent }
   }
 
@@ -263,10 +265,7 @@ function resolveVariable(
   // If it's a condition object, resolve it
   const conditionMet = resolveParameterOperationCondition(resolverValue, resolvedParameters)
 
-  const result = conditionMet ? resolverValue.result! : ''
-  const validResultFromParameterAvailable = typeof resolvedParameters[result] === 'string' ? resolvedParameters[result] : false
-
-  return validResultFromParameterAvailable || result
+  return conditionMet ? resolverValue.result! : ''
 }
 
 /**
