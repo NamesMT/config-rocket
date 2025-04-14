@@ -15,7 +15,6 @@ export type RocketConfigParameterResolver = RocketConfigParameterResolverOperati
 export type RocketConfigParameterResolverOperationPrompt = {
   operation: 'prompt'
   label: string
-  required?: boolean
 } & (
     {
       type: 'text'
@@ -196,9 +195,9 @@ async function resolveParameterOperationPrompt(resolver: RocketConfigParameterRe
   // Yea the switch case is identical I know, switch case here is necessary for type-safety and avoid `as` casting
   switch (resolver.type) {
     case 'text':
-      return await consola.prompt(resolver.label, { ...objectPick(resolver, ['initial', 'type', 'label', 'required']), cancel: 'reject' })
+      return await consola.prompt(resolver.label, { ...objectPick(resolver, ['initial', 'type', 'label']), cancel: 'reject' })
     case 'confirm':
-      return await consola.prompt(resolver.label, { ...objectPick(resolver, ['initial', 'type', 'label', 'required']), cancel: 'reject' })
+      return await consola.prompt(resolver.label, { ...objectPick(resolver, ['initial', 'type', 'label']), cancel: 'reject' })
   }
 }
 
