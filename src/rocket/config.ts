@@ -45,11 +45,13 @@ export type RocketConditionType = 'match' | 'contain' | 'not'
  */
 export type FuelReference = `fuel:${string}`
 
-export interface RocketConfigVariablesResolver { [key: string]: string | FuelReference | RocketCondition<string | FuelReference> }
+export type RocketResolvableString = string | RocketConfigParameter['id'] | FuelReference
+
+export interface RocketConfigVariablesResolver { [key: string]: RocketResolvableString | RocketCondition<RocketResolvableString> }
 
 export interface RocketConfigExcludesResolver { [filePath: string]: RocketCondition<true> }
 
-export interface RocketConfigFilesBuilderResolver { [key: string]: { filePath: string, content: string | FuelReference | RocketCondition<string | FuelReference> } }
+export interface RocketConfigFilesBuilderResolver { [key: string]: { filePath: string, content: RocketResolvableString | RocketCondition<RocketResolvableString> } }
 
 export interface RocketConfig {
   /**
@@ -104,11 +106,11 @@ export async function parseRocketConfig(configOrPath: RocketConfig | string) {
 
   const _injectPossibleParameter = (result: string) => typeof resolvedParameters[result] === 'string' ? resolvedParameters[result] : result
 
-  const resolvedVariables: Record<string, string | FuelReference> = {}
+  const resolvedVariables: Record<string, RocketResolvableString> = {}
   for (const [variableName, resolverValue] of Object.entries(config.variablesResolver ?? {}))
     resolvedVariables[variableName] = _injectPossibleParameter(resolveVariable(resolverValue, resolvedParameters))
 
-  const resolvedFilesBuilder: Record<string, { filePath: string, content: string | FuelReference }> = {}
+  const resolvedFilesBuilder: Record<string, { filePath: string, content: RocketResolvableString }> = {}
   for (const [builderKey, builderConfig] of Object.entries(config.filesBuildResolver ?? {})) {
     const resolvedContent = _injectPossibleParameter(resolveVariable(builderConfig.content, resolvedParameters)) // Re-use resolveVariable logic
     resolvedFilesBuilder[builderKey] = { filePath: builderConfig.filePath, content: resolvedContent }
@@ -146,7 +148,7 @@ export async function supplyFuel(variables: Record<string, string>, fuelDir: str
  *
  * Does not mutate the original object
  */
-export async function supplyFuelToResolvedFilesBuilder(resolvedFilesBuilder: Record<string, { filePath: string, content: string | FuelReference }>, fuelDir: string) {
+export async function supplyFuelToResolvedFilesBuilder(resolvedFilesBuilder: Record<string, { filePath: string, content: RocketResolvableString }>, fuelDir: string) {
   return await supplyFuelAsInstructed(resolvedFilesBuilder, fuelDir, async ({ subject, resolveFuelContent }) => {
     const fueledFilesBuilder: Record<string, { filePath: string, content: string }> = {}
     for (const [key, value] of Object.entries(subject)) {
