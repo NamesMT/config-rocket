@@ -1,5 +1,6 @@
 import type { UserInputConfig } from 'c12'
 import { readFile } from 'node:fs/promises'
+import { objectPick } from '@namesmt/utils'
 import { loadConfig } from 'c12'
 import consola from 'consola'
 import { dirname, resolve } from 'pathe'
@@ -14,6 +15,7 @@ export type RocketConfigParameterResolver = RocketConfigParameterResolverOperati
 export type RocketConfigParameterResolverOperationPrompt = {
   operation: 'prompt'
   label: string
+  required?: boolean
 } & (
     {
       type: 'text'
@@ -187,12 +189,12 @@ export function assertsRocketConfig(config: UserInputConfig | RocketConfig): ass
 }
 
 async function resolveParameterOperationPrompt(resolver: RocketConfigParameterResolverOperationPrompt): Promise<string | boolean> {
-  // Yea the switch case is identical i know, but using one prompt only require some `as` casting
+  // Yea the switch case is identical I know, switch case here is necessary for type-safety and avoid `as` casting
   switch (resolver.type) {
     case 'text':
-      return await consola.prompt(resolver.label, { type: 'text', initial: resolver.initial, cancel: 'reject' })
+      return await consola.prompt(resolver.label, { ...objectPick(resolver, ['initial', 'type', 'label', 'required']), cancel: 'reject' })
     case 'confirm':
-      return await consola.prompt(resolver.label, { type: 'confirm', initial: resolver.initial, cancel: 'reject' })
+      return await consola.prompt(resolver.label, { ...objectPick(resolver, ['initial', 'type', 'label', 'required']), cancel: 'reject' })
   }
 }
 
