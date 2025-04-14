@@ -151,8 +151,10 @@ export async function supplyFuelToResolvedFilesBuilder(resolvedFilesBuilder: Rec
   return await supplyFuelAsInstructed(resolvedFilesBuilder, fuelDir, async ({ subject, resolveFuelContent }) => {
     const fueledFilesBuilder: Record<string, { filePath: string, content: string }> = {}
     for (const [key, value] of Object.entries(subject)) {
-      if (typeof value.content === 'string') {
-        fueledFilesBuilder[key] = { filePath: value.filePath, content: await resolveFuelContent(value.content) }
+      if (typeof value.content.startsWith('fuel:')) {
+        const referencedFuelName = value.content.slice(5)
+        const fuelContent = await resolveFuelContent(referencedFuelName)
+        fueledFilesBuilder[key] = { filePath: value.filePath, content: fuelContent }
       }
     }
 
