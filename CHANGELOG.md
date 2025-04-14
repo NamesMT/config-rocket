@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.3.5
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.4...v0.3.5)
+
+### 🏡 Chore
+
+- **fileOutput:** More readable result upon merging ([82f7e0b](https://github.com/namesmt/config-rocket/commit/82f7e0b))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.3.4
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.3...v0.3.4)
