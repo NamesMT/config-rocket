@@ -76,7 +76,7 @@ export async function simpleRocketAssemble(options: SimpleRocketAssembleOptions)
       continue
     }
 
-    const fileContent = await readFile(resolve(frameDir, _filePath), { encoding: 'utf8' })
+    const fileContent = await readFile(resolve(frameDir, filePath), { encoding: 'utf8' })
       .then(content => replaceMap(content, variables))
 
     await simpleWriteFileWithDirs(resolve(outDir, _filePath), fileContent)
