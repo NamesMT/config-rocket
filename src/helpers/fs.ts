@@ -86,7 +86,11 @@ export async function fileOutput(filePath: string, data: string, options?: FileO
       if (hookable)
         await hookable.callHook('onFileOutputJsonMerge', mergeState)
 
-      state.data = mergeState.result ?? JSON.stringify(defu(JSON.parse(state.data), JSON.parse(await readFile(state.filePath, 'utf-8'))))
+      state.data = mergeState.result ?? JSON.stringify(
+        defu(JSON.parse(state.data), JSON.parse(await readFile(state.filePath, 'utf-8'))),
+        undefined,
+        2,
+      )
     }
     // simple concat for other files
     else if (mergeContent === true) {
