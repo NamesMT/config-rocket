@@ -261,7 +261,10 @@ function resolveVariable(
   // If it's a condition object, resolve it
   const conditionMet = resolveParameterOperationCondition(resolverValue, resolvedParameters)
 
-  return conditionMet ? resolverValue.result! : ''
+  const result = conditionMet ? resolverValue.result! : ''
+  const validResultFromParameterAvailable = typeof resolvedParameters[result] === 'string' ? resolvedParameters[result] : false
+
+  return validResultFromParameterAvailable || result
 }
 
 /**
