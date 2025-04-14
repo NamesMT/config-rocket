@@ -1,5 +1,6 @@
 import type { FlateError, Unzipped } from 'fflate'
 import type { Hookable, Hooks } from 'hookable'
+import type { FileOutputHooks } from '~/helpers/fs'
 import type { RocketAssembleHooks } from '~/rocket/assemble'
 import { rm } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -19,7 +20,7 @@ export interface UnpackOptions {
   /**
    * A hookable instance to hook into the rocket unpack (and related) process.
    */
-  hookable?: Hookable<RocketUnpackHooks & RocketAssembleHooks>
+  hookable?: Hookable<RocketUnpackHooks & RocketAssembleHooks & FileOutputHooks>
 }
 
 export async function unpackFromUrl(url: string, options?: UnpackOptions) {
@@ -48,7 +49,7 @@ export async function unpackFromUrl(url: string, options?: UnpackOptions) {
         return rejectPromise(new Error('Invalid config pack: "rocket.config.json5" not found.'))
 
       for (const [key, value] of Object.entries(unzipped))
-        await fileOutput(join('.tmp', key), strFromU8(value))
+        await fileOutput(join('.tmp', key), strFromU8(value), { hookable })
 
       resolvePromise()
     })

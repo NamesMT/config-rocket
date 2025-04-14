@@ -1,4 +1,5 @@
 import type { Hookable, Hooks } from 'hookable'
+import type { FileOutputHooks } from '~/helpers/fs'
 import type { ReactiveArgs } from '~/types'
 import { readFile } from 'node:fs/promises'
 import { replaceMap } from '@namesmt/utils'
@@ -38,9 +39,9 @@ export interface SimpleRocketAssembleOptions {
   outDir: string
 
   /**
-   * A hookable instance to hook into the rocket assemble process.
+   * A hookable instance to hook into the rocket assemble (and related) process.
    */
-  hookable?: Hookable<RocketAssembleHooks>
+  hookable?: Hookable<RocketAssembleHooks & FileOutputHooks>
 }
 export async function simpleRocketAssemble(options: SimpleRocketAssembleOptions) {
   const {
@@ -84,7 +85,7 @@ export async function simpleRocketAssemble(options: SimpleRocketAssembleOptions)
     const fileContent = await readFile(resolve(frameDir, filePath), { encoding: 'utf8' })
       .then(content => replaceMap(content, variables))
 
-    await fileOutput(resolve(outDir, _filePath), fileContent)
+    await fileOutput(resolve(outDir, _filePath), fileContent, { hookable, mergeContent: 'json' })
   }
 }
 
@@ -116,9 +117,9 @@ export interface RocketAssembleOptions {
   outDir: string
 
   /**
-   * A hookable instance to hook into the rocket assemble process.
+   * A hookable instance to hook into the rocket assemble (and related) process.
    */
-  hookable?: Hookable<RocketAssembleHooks>
+  hookable?: Hookable<RocketAssembleHooks & FileOutputHooks>
 }
 export async function rocketAssemble(options: RocketAssembleOptions) {
   const {
