@@ -31,7 +31,7 @@ export interface RocketConfigParameterResolverOperationCondition {
 
 export interface RocketCondition<AllowedResult = string | true> {
   type: RocketConditionType
-  subject: RocketCondition | string // Parameter id or nested condition
+  subject: RocketCondition | RocketConfigParameter['id'] // Parameter id or nested condition
   condition: RocketCondition | string | boolean // Nested condition or statement
   result?: AllowedResult
 }
@@ -61,11 +61,6 @@ export interface RocketConfig {
   variablesResolver?: RocketConfigVariablesResolver
 
   /**
-   * A resolver map to resolve the rocket's file excludes.
-   */
-  excludesResolver?: { [filePath: string]: RocketCondition<true> }
-
-  /**
    * A resolver map to dynamically build files.
    *
    * Files built by this resolver will be processed as if it's a frame file.
@@ -73,6 +68,11 @@ export interface RocketConfig {
    * These files will assembled AFTER the normal frame files, so it will take priority upon merge/overwrite.
    */
   filesBuildResolver?: RocketConfigFilesBuilderResolver
+
+  /**
+   * A resolver map to resolve the rocket's file excludes.
+   */
+  excludesResolver?: { [filePath: string]: RocketCondition<true> }
 }
 
 export function defineRocketConfig<RC extends RocketConfig>(config: RC): RC {
@@ -104,15 +104,15 @@ export async function parseRocketConfig(configOrPath: RocketConfig | string) {
   for (const [variableName, resolverValue] of Object.entries(config.variablesResolver ?? {}))
     resolvedVariables[variableName] = resolveVariable(resolverValue, resolvedParameters)
 
-  const resolvedExcludes: Record<string, boolean> = {}
-  for (const [excludeName, resolverValue] of Object.entries(config.excludesResolver ?? {}))
-    resolvedExcludes[excludeName] = resolveExclude(resolverValue, resolvedParameters)
-
   const resolvedFilesBuilder: Record<string, { filePath: string, content: string | FuelReference }> = {}
   for (const [builderKey, builderConfig] of Object.entries(config.filesBuildResolver ?? {})) {
     const resolvedContent = resolveVariable(builderConfig.content, resolvedParameters) // Re-use resolveVariable logic
     resolvedFilesBuilder[builderKey] = { filePath: builderConfig.filePath, content: resolvedContent }
   }
+
+  const resolvedExcludes: Record<string, boolean> = {}
+  for (const [excludeName, resolverValue] of Object.entries(config.excludesResolver ?? {}))
+    resolvedExcludes[excludeName] = resolveExclude(resolverValue, resolvedParameters)
 
   return { config, resolvedParameters, resolvedVariables, resolvedExcludes, resolvedFilesBuilder }
 }
@@ -177,26 +177,13 @@ export function assertsRocketConfig(config: UserInputConfig | RocketConfig): ass
   if (config.variablesResolver)
     assertsRocketVariablesResolver(config.variablesResolver)
 
-  // Validate excludesResolver object
-  if (config.excludesResolver)
-    assertsRocketExcludesResolver(config.excludesResolver)
-
   // Validate filesBuildResolver object
   if (config.filesBuildResolver)
     assertsRocketFilesBuildResolver(config.filesBuildResolver)
-}
 
-export function assertsRocketFilesBuildResolver(resolver: NonNullable<RocketConfig['filesBuildResolver']>): asserts resolver is NonNullable<RocketConfig['filesBuildResolver']> {
-  for (const [key, value] of Object.entries(resolver)) {
-    if (
-      typeof key !== 'string'
-      || typeof value?.filePath !== 'string'
-      // If content is not a string, validate the condition and its result type
-      || (typeof value.content !== 'string' && assertsRocketCondition(value.content))
-    ) {
-      throw new Error(`Invalid filesBuildResolver entry for key "${key}"`)
-    }
-  }
+  // Validate excludesResolver object
+  if (config.excludesResolver)
+    assertsRocketExcludesResolver(config.excludesResolver)
 }
 
 async function resolveParameterOperationPrompt(resolver: RocketConfigParameterResolverOperationPrompt): Promise<string | boolean> {
@@ -340,6 +327,27 @@ export function assertsRocketVariablesResolver(resolver: NonNullable<RocketConfi
       // Also ensure the condition's result is specifically a string
       if (typeof value.result !== 'string') {
         throw new TypeError(`Invalid variable resolver for "${key}": 'result' must be of type string, got ${typeof value.result}.`)
+      }
+    }
+  }
+}
+
+export function assertsRocketFilesBuildResolver(resolver: NonNullable<RocketConfig['filesBuildResolver']>): asserts resolver is NonNullable<RocketConfig['filesBuildResolver']> {
+  for (const [key, value] of Object.entries(resolver)) {
+    if (
+      typeof key !== 'string'
+      || typeof value?.filePath !== 'string'
+    ) {
+      throw new TypeError(`Invalid filesBuildResolver entry for key "${key}"`)
+    }
+
+    // Value must be a string OR a valid RocketCondition object
+    if (typeof value.content !== 'string') {
+      assertsRocketCondition(value.content)
+
+      // Also ensure the condition's result is specifically a string
+      if (typeof value.content.result !== 'string') {
+        throw new TypeError(`Invalid filesBuildResolver entry for "${key}": 'result' must be of type string, got ${typeof value.content.result}.`)
       }
     }
   }
