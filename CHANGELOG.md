@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.3.2
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.1...v0.3.2)
+
+### 🚀 Enhancements
+
+- Allow prompt `required` config ([1e33009](https://github.com/namesmt/config-rocket/commit/1e33009))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.3.1
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.0...v0.3.1)
