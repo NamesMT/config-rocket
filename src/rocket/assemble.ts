@@ -1,4 +1,5 @@
 import type { Hookable, Hooks } from 'hookable'
+import type { ReactiveArgs } from '~/types'
 import { readFile } from 'node:fs/promises'
 import { replaceMap } from '@namesmt/utils'
 import { resolve } from 'pathe'
@@ -8,10 +9,10 @@ import { logger } from '~/helpers/logger'
 import { parseRocketConfig, supplyFuel } from './config'
 
 export interface RocketAssembleHooks extends Hooks {
-  onFrameFile: (args: {
+  onFrameFile: (args: ReactiveArgs<{
     filePath: string
-    setFilePath: (newFilePath: string) => void
-    skipFile: () => void
+  }> & {
+    skipFile: (reason?: string) => void
   }) => void | Promise<void>
 }
 
@@ -52,22 +53,26 @@ export async function simpleRocketAssemble(options: SimpleRocketAssembleOptions)
 
   const frameFiles = await glob(resolve(frameDir, '**'), { dot: true, cwd: frameDir })
 
+  // process frame files
   for (const filePath of frameFiles) {
-    let _filePath = filePath
-    function setFilePath(newFilePath: string) {
-      _filePath = newFilePath
+    let _skipFlag: string | undefined
+    function skipFile(reason?: string) {
+      _skipFlag = _skipFlag ?? reason
     }
-    let _skipFlag = false
-    function skipFile() {
-      _skipFlag = true
+
+    let _filePath = filePath
+    const args = {
+      get filePath() { return _filePath },
+      set filePath(value) { _filePath = value },
+      skipFile,
     }
 
     if (hookable) {
-      hookable.callHook('onFrameFile', { filePath, setFilePath, skipFile })
+      await hookable.callHook('onFrameFile', args)
     }
 
     if (_skipFlag) {
-      logger.debug(`Skipping file: ${_filePath}`)
+      logger.debug(`Skipping file "${_filePath}", reason: ${_skipFlag}`)
       continue
     }
 
