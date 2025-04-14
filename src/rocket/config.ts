@@ -55,11 +55,64 @@ export interface RocketConfigFilesBuilderResolver { [key: string]: { filePath: s
 export interface RocketConfig {
   /**
    * The rocket's available parameters, allowing users to customize the launch.
+   *
+   * Example:
+   * ```ts
+   * {
+   *   parameters: [
+   *     {
+   *       id: '$input-BRAVE_API_KEY',
+   *       resolver: {
+   *         operation: 'prompt',
+   *         label: 'Enter your Brave API key',
+   *         type: 'text',
+   *       }
+   *     },
+   *     {
+   *       id: '$confirm-MEMORY_BANK_LOAD-disabled',
+   *       resolver: {
+   *         operation: 'prompt',
+   *         label: 'Disable "Memory Bank Load" instruction?',
+   *         type: 'confirm',
+   *         initial: false,
+   *       }
+   *     },
+   *     {
+   *       id: 'example-nested-condition',
+   *       resolver: {
+   *         operation: 'condition',
+   *         condition: {
+   *           subject: '$input-BRAVE_API_KEY',
+   *           type: 'match',
+   *           condition: 'SHOULD MATCH THIS',
+   *           result: 'ABCDE',
+   *       }
+   *     }
+   *   ]
+   * }
+   * ```
    */
   parameters?: RocketConfigParameter[]
 
   /**
    * A resolver map to resolve the rocket's variables.
+   *
+   * Example:
+   * ```ts
+   * {
+   *   variablesResolver: {
+   *     '{{BRAVE_API_KEY}}': '$input-BRAVE_API_KEY',
+   *
+   *     // If not disabled, load context from `fuel:instruct_memory-bank-load.md`
+   *     '{{MEMORY_BANK_LOAD}}': {
+   *       subject: '$confirm-MEMORY_BANK_LOAD-disabled',
+   *       type: 'match',
+   *       condition: false,
+   *       result: 'fuel:instruct_memory-bank-load.md',
+   *     }
+   *   }
+   * }
+   * ```
    */
   variablesResolver?: RocketConfigVariablesResolver
 
@@ -69,6 +122,18 @@ export interface RocketConfig {
    * Files built by this resolver will be processed as if it's a frame file.
    *
    * These files will assembled AFTER the normal frame files, so it will take priority upon merge/overwrite.
+   *
+   * Example:
+   * ```ts
+   * {
+   *   filesBuildResolver: {
+   *     'brave-search-mcp': {
+   *       filePath: '.roo/mcp.json',
+   *       content: 'fuel:brave-search-mcp.json',
+   *     },
+   *   }
+   * }
+   * ```
    */
   filesBuildResolver?: RocketConfigFilesBuilderResolver
 
