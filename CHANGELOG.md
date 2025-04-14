@@ -1,6 +1,22 @@
 # Changelog
 
 
+## v0.3.3
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.2...v0.3.3)
+
+### 🩹 Fixes
+
+- `parameters` reference does not work on non-`RocketCondition` input ([26f018f](https://github.com/namesmt/config-rocket/commit/26f018f))
+
+### 🌊 Types
+
+- Add `RocketResolvableString` type ([e4290c6](https://github.com/namesmt/config-rocket/commit/e4290c6))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.3.2
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.1...v0.3.2)
