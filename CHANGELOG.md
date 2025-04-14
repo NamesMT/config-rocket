@@ -1,6 +1,39 @@
 # Changelog
 
 
+## v0.3.0
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.2.2...v0.3.0)
+
+### 🚀 Enhancements
+
+- ⚠️  Introduce `ReactiveArgs`, refactor a bit ([4087e3f](https://github.com/namesmt/config-rocket/commit/4087e3f))
+- `simpleWriteFileWithDirs` => `fileOutput`, add `hookable` support ([70a48e8](https://github.com/namesmt/config-rocket/commit/70a48e8))
+- **fileOutput:** Support content merging and hooks ([9a8d89b](https://github.com/namesmt/config-rocket/commit/9a8d89b))
+- Add `filesBuildResolver` config (+ refactorings) ([ee5eef2](https://github.com/namesmt/config-rocket/commit/ee5eef2))
+
+### 🩹 Fixes
+
+- Should read from original globbed filePath ([4295cbf](https://github.com/namesmt/config-rocket/commit/4295cbf))
+
+### 📖 Documentation
+
+- **README:** Minor ([9bb838c](https://github.com/namesmt/config-rocket/commit/9bb838c))
+
+### ✅ Tests
+
+- Add tests for `assemble` ([695f23d](https://github.com/namesmt/config-rocket/commit/695f23d))
+- Add tests for `helpers/fs` ([66db143](https://github.com/namesmt/config-rocket/commit/66db143))
+- **rocket/assemble:** Update ([d6a89e2](https://github.com/namesmt/config-rocket/commit/d6a89e2))
+
+#### ⚠️ Breaking Changes
+
+- ⚠️  Introduce `ReactiveArgs`, refactor a bit ([4087e3f](https://github.com/namesmt/config-rocket/commit/4087e3f))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.2.2
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.2.1...v0.2.2)
