@@ -43,6 +43,12 @@ export type RocketConditionType = 'match' | 'contain' | 'not'
  */
 export type FuelReference = `fuel:${string}`
 
+export interface RocketConfigVariablesResolver { [key: string]: string | FuelReference | RocketCondition<string | FuelReference> }
+
+export interface RocketConfigExcludesResolver { [filePath: string]: RocketCondition<true> }
+
+export interface RocketConfigFilesBuilderResolver { [key: string]: { filePath: string, content: string | FuelReference | RocketCondition<string | FuelReference> } }
+
 export interface RocketConfig {
   /**
    * The rocket's available parameters, allowing users to customize the launch.
@@ -50,14 +56,23 @@ export interface RocketConfig {
   parameters?: RocketConfigParameter[]
 
   /**
-   * A simple map to resolve the rocket's variables.
+   * A resolver map to resolve the rocket's variables.
    */
-  variablesResolver?: Record<string, string | FuelReference | RocketCondition<string | FuelReference>>
+  variablesResolver?: RocketConfigVariablesResolver
 
   /**
-   * A simple map to resolve the rocket's excludes.
+   * A resolver map to resolve the rocket's file excludes.
    */
-  excludesResolver?: Record<string, RocketCondition<true>>
+  excludesResolver?: { [filePath: string]: RocketCondition<true> }
+
+  /**
+   * A resolver map to dynamically build files.
+   *
+   * Files built by this resolver will be processed as if it's a frame file.
+   *
+   * These files will assembled AFTER the normal frame files, so it will take priority upon merge/overwrite.
+   */
+  filesBuildResolver?: RocketConfigFilesBuilderResolver
 }
 
 export function defineRocketConfig<RC extends RocketConfig>(config: RC): RC {
@@ -86,7 +101,7 @@ export async function parseRocketConfig(configOrPath: RocketConfig | string) {
   for (const parameter of config.parameters ?? [])
     resolvedParameters[parameter.id] = await resolveParameter(parameter, resolvedParameters)
 
-  const resolvedVariables: Record<string, string> = {}
+  const resolvedVariables: Record<string, string | FuelReference> = {}
   for (const [variableName, resolverValue] of Object.entries(config.variablesResolver ?? {}))
     resolvedVariables[variableName] = resolveVariable(resolverValue, resolvedParameters)
 
@@ -94,23 +109,60 @@ export async function parseRocketConfig(configOrPath: RocketConfig | string) {
   for (const [excludeName, resolverValue] of Object.entries(config.excludesResolver ?? {}))
     resolvedExcludes[excludeName] = resolveExclude(resolverValue, resolvedParameters)
 
-  return { config, resolvedParameters, resolvedVariables, resolvedExcludes }
+  const resolvedFilesBuilder: Record<string, { filePath: string, content: string | FuelReference }> = {}
+  for (const [builderKey, builderConfig] of Object.entries(config.filesBuildResolver ?? {})) {
+    const resolvedContent = resolveVariable(builderConfig.content, resolvedParameters) // Re-use resolveVariable logic
+    resolvedFilesBuilder[builderKey] = { filePath: builderConfig.filePath, content: resolvedContent }
+  }
+
+  return { config, resolvedParameters, resolvedVariables, resolvedExcludes, resolvedFilesBuilder }
 }
 
 /**
- * Parses the passes in `variables` and replace `FuelReference`s with its content.
+ * Parses a simple Record `variables` and replace `FuelReference`s with its content.
+ *
+ * Does not mutate the original object
  */
 export async function supplyFuel(variables: Record<string, string>, fuelDir: string): Promise<Record<string, string>> {
-  const fueledVariables: Record<string, string> = {}
-  for (const key in variables) {
-    if (variables[key].startsWith('fuel:')) {
-      const referencedFuelName = variables[key].slice(5)
-      const fuelContent = await readFile(resolve(fuelDir, referencedFuelName), 'utf8')
-      fueledVariables[key] = fuelContent
+  return await supplyFuelAsInstructed(variables, fuelDir, async ({ subject, resolveFuelContent }) => {
+    const fueledVariables: Record<string, string> = {}
+    for (const key in subject) {
+      if (subject[key].startsWith('fuel:')) {
+        const referencedFuelName = subject[key].slice(5)
+        const fuelContent = await resolveFuelContent(referencedFuelName)
+        fueledVariables[key] = fuelContent
+      }
     }
-  }
 
-  return { ...variables, ...fueledVariables }
+    return { ...subject, ...fueledVariables }
+  })
+}
+
+/**
+ * Parses a `resolvedFilesBuilder` and replace `FuelReference`s with its content.
+ *
+ * Does not mutate the original object
+ */
+export async function supplyFuelToResolvedFilesBuilder(resolvedFilesBuilder: Record<string, { filePath: string, content: string | FuelReference }>, fuelDir: string) {
+  return await supplyFuelAsInstructed(resolvedFilesBuilder, fuelDir, async ({ subject, resolveFuelContent }) => {
+    const fueledFilesBuilder: Record<string, { filePath: string, content: string }> = {}
+    for (const [key, value] of Object.entries(subject)) {
+      if (typeof value.content === 'string') {
+        fueledFilesBuilder[key] = { filePath: value.filePath, content: await resolveFuelContent(value.content) }
+      }
+    }
+
+    return { ...subject, ...fueledFilesBuilder }
+  })
+}
+
+export async function supplyFuelAsInstructed<S>(
+  subject: S,
+  fuelDir: string,
+  supplyFn: (args: { subject: S, resolveFuelContent: (fuelName: string) => Promise<string> }) => Promise<S>,
+): Promise<S> {
+  const resolveFuelContent = (fuelName: string) => readFile(resolve(fuelDir, fuelName), 'utf8')
+  return await supplyFn({ subject, resolveFuelContent })
 }
 
 export function assertsRocketConfig(config: UserInputConfig | RocketConfig): asserts config is RocketConfig {
@@ -129,6 +181,23 @@ export function assertsRocketConfig(config: UserInputConfig | RocketConfig): ass
   // Validate excludesResolver object
   if (config.excludesResolver)
     assertsRocketExcludesResolver(config.excludesResolver)
+
+  // Validate filesBuildResolver object
+  if (config.filesBuildResolver)
+    assertsRocketFilesBuildResolver(config.filesBuildResolver)
+}
+
+export function assertsRocketFilesBuildResolver(resolver: NonNullable<RocketConfig['filesBuildResolver']>): asserts resolver is NonNullable<RocketConfig['filesBuildResolver']> {
+  for (const [key, value] of Object.entries(resolver)) {
+    if (
+      typeof key !== 'string'
+      || typeof value?.filePath !== 'string'
+      // If content is not a string, validate the condition and its result type
+      || (typeof value.content !== 'string' && assertsRocketCondition(value.content))
+    ) {
+      throw new Error(`Invalid filesBuildResolver entry for key "${key}"`)
+    }
+  }
 }
 
 async function resolveParameterOperationPrompt(resolver: RocketConfigParameterResolverOperationPrompt): Promise<string | boolean> {

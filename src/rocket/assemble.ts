@@ -7,7 +7,7 @@ import { resolve } from 'pathe'
 import { glob } from 'tinyglobby'
 import { fileOutput } from '~/helpers/fs'
 import { logger } from '~/helpers/logger'
-import { parseRocketConfig, supplyFuel } from './config'
+import { parseRocketConfig, supplyFuel, supplyFuelToResolvedFilesBuilder } from './config'
 
 export interface RocketAssembleHooks extends Hooks {
   onFrameFile: (args: ReactiveArgs<{
@@ -26,12 +26,17 @@ export interface SimpleRocketAssembleOptions {
   /**
    * The variables map to put into the frame.
    */
-  variables: Record<string, string>
+  variables?: Record<string, string>
 
   /**
    * The excludes map to skip files from the frame.
    */
-  excludes: Record<string, boolean>
+  excludes?: Record<string, boolean>
+
+  /**
+   * Files builder map to dynamically build files.
+   */
+  filesBuilder?: Record<string, { filePath: string, content: string }>
 
   /**
    * Output directory.
@@ -46,47 +51,76 @@ export interface SimpleRocketAssembleOptions {
 export async function simpleRocketAssemble(options: SimpleRocketAssembleOptions) {
   const {
     frameDir,
-    variables,
-    excludes,
+    variables = {},
+    excludes = {},
+    filesBuilder = {},
     outDir,
     hookable,
   } = options
 
   const frameFiles = await glob(resolve(frameDir, '**'), { dot: true, cwd: frameDir })
 
-  // process frame files
-  for (const filePath of frameFiles) {
-    let _skipFlag: string | undefined
-    function skipFile(reason?: string) {
-      _skipFlag = _skipFlag ?? reason
+  async function processFiles(files: Array<{
+    source: 'frame' | 'filesBuilder'
+    filePath: string
+    key?: string
+    content?: string
+  }>) {
+    for (const file of files) {
+      let _skipFlag: string | undefined
+      function skipFile(reason?: string) {
+        _skipFlag = _skipFlag ?? reason
+      }
+
+      let filePath = file.filePath
+      const args = {
+        get filePath() { return filePath },
+        set filePath(value) { filePath = value },
+        skipFile,
+      }
+
+      if (hookable) {
+        await hookable.callHook('onFrameFile', args)
+      }
+
+      if (_skipFlag) {
+        logger.debug(`Skipping file "${filePath}", reason: ${_skipFlag}`)
+        continue
+      }
+
+      if (excludes[filePath]) {
+        logger.debug(`Skipping excluded file: ${filePath}`)
+        continue
+      }
+
+      const resolveFileContent = async () => {
+        switch (file.source) {
+          case 'frame':
+            return await readFile(resolve(frameDir, file.filePath), { encoding: 'utf8' })
+          case 'filesBuilder':
+            return file.content!
+          default:
+            throw new Error(`Unexpected file source: ${file.source}`)
+        }
+      }
+
+      const fileContent = await resolveFileContent()
+        .then(content => replaceMap(content, variables))
+
+      await fileOutput(resolve(outDir, filePath), fileContent, { hookable, mergeContent: 'json' })
     }
-
-    let _filePath = filePath
-    const args = {
-      get filePath() { return _filePath },
-      set filePath(value) { _filePath = value },
-      skipFile,
-    }
-
-    if (hookable) {
-      await hookable.callHook('onFrameFile', args)
-    }
-
-    if (_skipFlag) {
-      logger.debug(`Skipping file "${_filePath}", reason: ${_skipFlag}`)
-      continue
-    }
-
-    if (excludes[_filePath]) {
-      logger.debug(`Skipping excluded file: ${_filePath}`)
-      continue
-    }
-
-    const fileContent = await readFile(resolve(frameDir, filePath), { encoding: 'utf8' })
-      .then(content => replaceMap(content, variables))
-
-    await fileOutput(resolve(outDir, _filePath), fileContent, { hookable, mergeContent: 'json' })
   }
+
+  // process frame files
+  await processFiles(frameFiles.map(filePath => ({ source: 'frame', filePath })))
+
+  // process filesBuilder files
+  await processFiles(Object.entries(filesBuilder).map(([key, file]) => ({
+    source: 'filesBuilder',
+    filePath: file.filePath,
+    key,
+    content: file.content,
+  })))
 }
 
 export interface RocketAssembleOptions {
@@ -132,12 +166,14 @@ export async function rocketAssemble(options: RocketAssembleOptions) {
 
   const rocketConfigPath = rocketConfig ?? resolve(frameDir, '../rocket.config')
 
-  const { resolvedVariables, resolvedExcludes } = await parseRocketConfig(rocketConfigPath)
+  const { resolvedVariables, resolvedExcludes, resolvedFilesBuilder } = await parseRocketConfig(rocketConfigPath)
 
   const fueledVariables = await supplyFuel(resolvedVariables, fuelDir)
+  const fueledFilesBuilder: Record<string, { filePath: string, content: string }> = await supplyFuelToResolvedFilesBuilder(resolvedFilesBuilder, fuelDir)
 
   await simpleRocketAssemble({
     frameDir,
+    filesBuilder: fueledFilesBuilder,
     variables: fueledVariables,
     excludes: resolvedExcludes,
     outDir,
