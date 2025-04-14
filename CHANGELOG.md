@@ -1,6 +1,26 @@
 # Changelog
 
 
+## v0.3.1
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.0...v0.3.1)
+
+### 🚀 Enhancements
+
+- Allows result referrence back to `parameters` ([a97c578](https://github.com/namesmt/config-rocket/commit/a97c578))
+
+### 💅 Refactors
+
+- Minor ([b3b3cec](https://github.com/namesmt/config-rocket/commit/b3b3cec))
+
+### 🏡 Chore
+
+- Some refactor, better asserts for `filesBuildResolver` ([21ffc0f](https://github.com/namesmt/config-rocket/commit/21ffc0f))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.3.0
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.2.2...v0.3.0)
