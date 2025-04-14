@@ -97,7 +97,6 @@ export async function parseRocketConfig(configOrPath: RocketConfig | string) {
   const config = await loadRocketConfig(configOrPath)
 
   const resolvedParameters: Record<string, string | boolean> = {}
-
   for (const parameter of config.parameters ?? [])
     resolvedParameters[parameter.id] = await resolveParameter(parameter, resolvedParameters)
 
