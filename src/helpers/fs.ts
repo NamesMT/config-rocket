@@ -9,7 +9,7 @@ import { logger } from './logger'
 export type FileOutputState = ReactiveArgs<{
   filePath: string
   data: string
-  result: undefined | string
+  mergeResult: undefined | string
   mergeType: 'json' | 'concat'
   isValidFileToMerge: boolean
 }>
@@ -55,7 +55,7 @@ export async function fileOutput(filePath: string, data: string, options?: FileO
   const state: FileOutputState = {
     filePath,
     data,
-    result: undefined as undefined | string,
+    mergeResult: undefined as undefined | string,
     mergeType: filePath.endsWith('.json') ? 'json' : 'concat',
     isValidFileToMerge: mergeContent === true || (mergeContent === 'json' && filePath.endsWith('.json')),
   }
@@ -78,7 +78,7 @@ export async function fileOutput(filePath: string, data: string, options?: FileO
         if (hookable)
           await hookable.callHook('onFileOutputJsonMerge', state)
 
-        state.data = state.result ?? JSON.stringify(
+        state.data = state.mergeResult ?? JSON.stringify(
           defu(JSON.parse(state.data), JSON.parse(await readFile(state.filePath, 'utf-8'))),
           undefined,
           2,
@@ -89,7 +89,7 @@ export async function fileOutput(filePath: string, data: string, options?: FileO
         if (hookable)
           await hookable.callHook('onFileOutputConcatMerge', state)
 
-        state.data = state.result ?? Buffer.concat([await readFile(state.filePath), Buffer.from(state.data)]).toString()
+        state.data = state.mergeResult ?? Buffer.concat([await readFile(state.filePath), Buffer.from(state.data)]).toString()
         break
       }
       default:
