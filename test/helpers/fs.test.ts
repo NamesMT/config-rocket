@@ -159,7 +159,13 @@ describe('fileOutput', () => {
 
     // Assert
     expect(hookSpy).toHaveBeenCalledTimes(1)
-    expect(hookSpy).toHaveBeenCalledWith({ filePath, data })
+    expect(hookSpy).toHaveBeenCalledWith(expect.objectContaining({
+      filePath,
+      data,
+      isValidFileToMerge: false, // Based on mockedAccess rejecting
+      mergeType: 'concat', // Based on file extension
+      mergeResult: undefined,
+    }))
     expect(mockedMkdir).toHaveBeenCalledWith('path/to/hook', { recursive: true })
     expect(mockedWriteFile).toHaveBeenCalledWith(filePath, data)
   })
@@ -217,21 +223,21 @@ describe('fileOutput', () => {
     expect(mergeHookSpy).toHaveBeenCalledWith(expect.objectContaining({
       filePath,
       data: JSON.stringify({ a: 1, b: 2 }, null, 2),
-      result: undefined,
+      mergeResult: undefined,
     }))
     expect(mockedReadFile).toHaveBeenCalledWith(filePath, 'utf-8')
     const expectedMergedData = JSON.stringify({ a: 1, b: 2 }, null, 2)
     expect(mockedWriteFile).toHaveBeenCalledWith(filePath, expectedMergedData)
   })
 
-  it('should use result from onFileOutputJsonMerge hook', async () => {
+  it('should use mergeResult from onFileOutputJsonMerge hook', async () => {
     // Arrange
     const filePath = 'path/to/merge/hook-override.json'
     const newData = JSON.stringify({ b: 2 })
-    const customResult = JSON.stringify({ custom: 'result' })
+    const customResult = JSON.stringify({ custom: 'mergeResult' })
     const hookable = createHooks<FileOutputHooks>()
     hookable.hook('onFileOutputJsonMerge', (state) => {
-      state.result = customResult
+      state.mergeResult = customResult
     })
     mockedAccess.mockResolvedValue(undefined) // File exists
     mockedReadFile.mockResolvedValue(JSON.stringify({ a: 1 })) // Mocked, but shouldn't be called
@@ -244,14 +250,14 @@ describe('fileOutput', () => {
     expect(mockedWriteFile).toHaveBeenCalledWith(filePath, customResult)
   })
 
-  it('should call onFileOutputOtherMerge hook during non-JSON merge', async () => {
+  it('should call onFileOutputConcatMerge hook during non-JSON merge', async () => {
     // Arrange
     const filePath = 'path/to/merge/hook.txt'
     const newData = ' new data'
     const existingData = 'old data'
     const hookable = createHooks<FileOutputHooks>()
     const mergeHookSpy = vi.fn()
-    hookable.hook('onFileOutputOtherMerge', mergeHookSpy)
+    hookable.hook('onFileOutputConcatMerge', mergeHookSpy)
     mockedAccess.mockResolvedValue(undefined) // File exists
     mockedReadFile.mockResolvedValue(Buffer.from(existingData))
 
@@ -263,21 +269,21 @@ describe('fileOutput', () => {
     expect(mergeHookSpy).toHaveBeenCalledWith(expect.objectContaining({
       filePath,
       data: 'old data new data', // Hook sees final merged data
-      result: undefined,
+      mergeResult: undefined,
     }))
     expect(mockedReadFile).toHaveBeenCalledWith(filePath)
     const expectedMergedData = Buffer.concat([Buffer.from(existingData), Buffer.from(newData)]).toString()
     expect(mockedWriteFile).toHaveBeenCalledWith(filePath, expectedMergedData)
   })
 
-  it('should use result from onFileOutputOtherMerge hook', async () => {
+  it('should use mergeResult from onFileOutputConcatMerge hook', async () => {
     // Arrange
     const filePath = 'path/to/merge/hook-override.txt'
     const newData = ' new data'
-    const customResult = 'custom hook result'
+    const customResult = 'custom hook mergeResult'
     const hookable = createHooks<FileOutputHooks>()
-    hookable.hook('onFileOutputOtherMerge', (state) => {
-      state.result = customResult
+    hookable.hook('onFileOutputConcatMerge', (state) => {
+      state.mergeResult = customResult
     })
     mockedAccess.mockResolvedValue(undefined) // File exists
     mockedReadFile.mockResolvedValue(Buffer.from('old data')) // Mocked, but shouldn't be called
@@ -288,5 +294,183 @@ describe('fileOutput', () => {
     // Assert
     expect(mockedReadFile).not.toHaveBeenCalledWith(filePath) // readFile not called
     expect(mockedWriteFile).toHaveBeenCalledWith(filePath, customResult)
+  })
+
+  it('should set mergeType to "json" for JSON files', async () => {
+    // Arrange
+    const filePath = 'path/to/merge/config.json'
+    const data = 'test data'
+    const hookable = createHooks<FileOutputHooks>()
+    const hookSpy = vi.fn()
+    hookable.hook('onFileOutput', hookSpy)
+    mockedAccess.mockRejectedValue(new Error('File not found')) // File doesn't exist
+
+    // Act
+    await fileOutput(filePath, data, { hookable })
+
+    // Assert
+    expect(hookSpy).toHaveBeenCalledWith(expect.objectContaining({
+      filePath,
+      data,
+      mergeType: 'json', // Should be set to json for .json files
+      isValidFileToMerge: false, // Should be false since mergeContent is not set
+    }))
+  })
+
+  it('should set mergeType to "concat" for non-JSON files', async () => {
+    // Arrange
+    const filePath = 'path/to/merge/file.txt'
+    const data = 'test data'
+    const hookable = createHooks<FileOutputHooks>()
+    const hookSpy = vi.fn()
+    hookable.hook('onFileOutput', hookSpy)
+    mockedAccess.mockRejectedValue(new Error('File not found')) // File doesn't exist
+
+    // Act
+    await fileOutput(filePath, data, { hookable })
+
+    // Assert
+    expect(hookSpy).toHaveBeenCalledWith(expect.objectContaining({
+      filePath,
+      data,
+      mergeType: 'concat', // Should be set to concat for non-.json files
+      isValidFileToMerge: false, // Should be false since mergeContent is not true
+    }))
+  })
+
+  it('should set isValidFileToMerge to true when mergeContent is true for any file', async () => {
+    // Arrange
+    const filePath = 'path/to/merge/file.txt'
+    const data = 'test data'
+    const hookable = createHooks<FileOutputHooks>()
+    const hookSpy = vi.fn()
+    hookable.hook('onFileOutput', hookSpy)
+    mockedAccess.mockRejectedValue(new Error('File not found')) // File doesn't exist
+
+    // Act
+    await fileOutput(filePath, data, { hookable, mergeContent: true })
+
+    // Assert
+    expect(hookSpy).toHaveBeenCalledWith(expect.objectContaining({
+      filePath,
+      data,
+      mergeType: 'concat', // Should be set to concat for non-.json files
+      isValidFileToMerge: true, // Should be true since mergeContent is true
+    }))
+  })
+
+  it('should set isValidFileToMerge to true when mergeContent is "json" for JSON files', async () => {
+    // Arrange
+    const filePath = 'path/to/merge/config.json'
+    const data = 'test data'
+    const hookable = createHooks<FileOutputHooks>()
+    const hookSpy = vi.fn()
+    hookable.hook('onFileOutput', hookSpy)
+    mockedAccess.mockRejectedValue(new Error('File not found')) // File doesn't exist
+
+    // Act
+    await fileOutput(filePath, data, { hookable, mergeContent: 'json' })
+
+    // Assert
+    expect(hookSpy).toHaveBeenCalledWith(expect.objectContaining({
+      filePath,
+      data,
+      mergeType: 'json', // Should be set to json for .json files
+      isValidFileToMerge: true, // Should be true since mergeContent is "json" and file is .json
+    }))
+  })
+
+  it('should set isValidFileToMerge to false when mergeContent is "json" for non-JSON files', async () => {
+    // Arrange
+    const filePath = 'path/to/merge/file.txt'
+    const data = 'test data'
+    const hookable = createHooks<FileOutputHooks>()
+    const hookSpy = vi.fn()
+    hookable.hook('onFileOutput', hookSpy)
+    mockedAccess.mockRejectedValue(new Error('File not found')) // File doesn't exist
+
+    // Act
+    await fileOutput(filePath, data, { hookable, mergeContent: 'json' })
+
+    // Assert
+    expect(hookSpy).toHaveBeenCalledWith(expect.objectContaining({
+      filePath,
+      data,
+      mergeType: 'concat', // Should be set to concat for non-.json files
+      isValidFileToMerge: false, // Should be false since mergeContent is "json" but file is not .json
+    }))
+  })
+
+  it('should not merge when mergeContent is false', async () => {
+    // Arrange
+    const filePath = 'path/to/merge/file.txt'
+    const data = 'test data'
+    const existingData = 'existing data'
+    const hookable = createHooks<FileOutputHooks>()
+    const hookSpy = vi.fn()
+    hookable.hook('onFileOutput', hookSpy)
+    mockedAccess.mockResolvedValue(undefined) // File exists
+    mockedReadFile.mockResolvedValue(Buffer.from(existingData))
+
+    // Act
+    await fileOutput(filePath, data, { hookable, mergeContent: false })
+
+    // Assert
+    expect(hookSpy).toHaveBeenCalledWith(expect.objectContaining({
+      filePath,
+      data,
+      mergeType: 'concat', // Should be set to concat for non-.json files
+      isValidFileToMerge: false, // Should be false since mergeContent is false
+    }))
+    expect(mockedReadFile).not.toHaveBeenCalled() // Should not read file when not merging
+    expect(mockedWriteFile).toHaveBeenCalledWith(filePath, data) // Should write new data directly
+  })
+
+  it('should not merge when file does not exist', async () => {
+    // Arrange
+    const filePath = 'path/to/new/file.txt'
+    const data = 'test data'
+    const hookable = createHooks<FileOutputHooks>()
+    const hookSpy = vi.fn()
+    hookable.hook('onFileOutput', hookSpy)
+    mockedAccess.mockRejectedValue(new Error('File not found')) // File doesn't exist
+
+    // Act
+    await fileOutput(filePath, data, { hookable, mergeContent: true })
+
+    // Assert
+    expect(hookSpy).toHaveBeenCalledWith(expect.objectContaining({
+      filePath,
+      data,
+      mergeType: 'concat', // Should be set to concat for non-.json files
+      isValidFileToMerge: true,
+    }))
+    expect(mockedReadFile).not.toHaveBeenCalled() // Should not read file when not merging
+    expect(mockedWriteFile).toHaveBeenCalledWith(filePath, data) // Should write new data directly
+  })
+
+  it('should not merge when mergeContent is not specified', async () => {
+    // Arrange
+    const filePath = 'path/to/merge/file.txt'
+    const data = 'test data'
+    const existingData = 'existing data'
+    const hookable = createHooks<FileOutputHooks>()
+    const hookSpy = vi.fn()
+    hookable.hook('onFileOutput', hookSpy)
+    mockedAccess.mockResolvedValue(undefined) // File exists
+    mockedReadFile.mockResolvedValue(Buffer.from(existingData))
+
+    // Act
+    await fileOutput(filePath, data, { hookable })
+
+    // Assert
+    expect(hookSpy).toHaveBeenCalledWith(expect.objectContaining({
+      filePath,
+      data,
+      mergeType: 'concat', // Should be set to concat for non-.json files
+      isValidFileToMerge: false, // Should be false since mergeContent is not specified
+    }))
+    expect(mockedReadFile).not.toHaveBeenCalled() // Should not read file when not merging
+    expect(mockedWriteFile).toHaveBeenCalledWith(filePath, data) // Should write new data directly
   })
 })
