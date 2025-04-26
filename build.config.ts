@@ -6,14 +6,14 @@ export default defineBuildConfig({
     // Main engine
     'src/index',
 
-    // CLI-specific functions
+    // CLI-specific exports
     'src/cli',
 
     // CLI app
-    {
-      input: 'src/cli-entry',
-      declaration: false,
-    },
+    'src/cli-entry',
+
+    // CLI `rocket-zip` app
+    'src/cli-rocket-zip-entry',
   ],
   declaration: 'node16',
   clean: true,
