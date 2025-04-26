@@ -1,6 +1,23 @@
 # Changelog
 
 
+## v0.3.9
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.8...v0.3.9)
+
+### 🩹 Fixes
+
+- Emit CJS for npx usage ([6c6feb1](https://github.com/namesmt/config-rocket/commit/6c6feb1))
+
+### 📖 Documentation
+
+- **README:** Update ([53ee936](https://github.com/namesmt/config-rocket/commit/53ee936))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+- Trung Dang ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.3.8
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.7...v0.3.8)
