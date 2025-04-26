@@ -31,7 +31,7 @@
   "types": "./dist/index.d.mts",
   "bin": {
     "config-rocket": "./dist/cli-entry.mjs",
-    "rocket-zip": "./dist/cli-zip-entry.mjs"
+    "rocket-zip": "./dist/cli-rocket-zip-entry.mjs"
   },
   "files": [
     "dist"
