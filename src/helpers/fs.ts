@@ -6,23 +6,20 @@ import { defu } from 'defu'
 import { dirname } from 'pathe'
 import { logger } from './logger'
 
+export type FileOutputState = ReactiveArgs<{
+  filePath: string
+  data: string
+  result: undefined | string
+  mergeType: 'json' | 'concat'
+  isValidFileToMerge: boolean
+}>
+
 export interface FileOutputHooks extends Hooks {
-  onFileOutput: (args: ReactiveArgs<{
-    filePath: string
-    data: string
-  }>) => void | Promise<void>
+  onFileOutput: (state: FileOutputState) => void | Promise<void>
 
-  onFileOutputJsonMerge: (args: ReactiveArgs<{
-    filePath: string
-    data: string
-    result: undefined | string
-  }>) => void | Promise<void>
+  onFileOutputJsonMerge: (state: FileOutputState) => void | Promise<void>
 
-  onFileOutputOtherMerge: (args: ReactiveArgs<{
-    filePath: string
-    data: string
-    result: undefined | string
-  }>) => void | Promise<void>
+  onFileOutputOtherMerge: (state: FileOutputState) => void | Promise<void>
 }
 
 export interface FileOutputOptions {
@@ -55,9 +52,12 @@ export async function fileOutput(filePath: string, data: string, options?: FileO
     mergeContent,
   } = options ?? {}
 
-  const state = {
+  const state: FileOutputState = {
     filePath,
     data,
+    result: undefined as undefined | string,
+    mergeType: filePath.endsWith('.json') ? 'json' : 'concat',
+    isValidFileToMerge: mergeContent === true || (mergeContent === 'json' && filePath.endsWith('.json')),
   }
 
   if (hookable)
@@ -66,39 +66,34 @@ export async function fileOutput(filePath: string, data: string, options?: FileO
   // Optimistically create the directory
   await mkdir(dirname(state.filePath), { recursive: true })
 
-  const isValidFileToMerge = mergeContent === true || (mergeContent === 'json' && state.filePath.endsWith('.json'))
   const checkFileExists = () => access(state.filePath).then(() => true).catch(() => false)
-  if (isValidFileToMerge && await checkFileExists()) {
+  if (state.isValidFileToMerge && await checkFileExists()) {
     logger.info(`Merging file "${state.filePath}"...`)
 
-    const mergeState = {
-      get filePath() { return state.filePath },
-      set filePath(value) { state.filePath = value },
-      get data() { return state.data },
-      set data(value) { state.data = value },
-      result: undefined as undefined | string,
-    }
+    switch (state.mergeType) {
+      case 'json': {
+        if (typeof state.data !== 'string')
+          throw new Error('Please provide `data` as a JSON stringified object')
 
-    // special deep merger for json
-    if (state.filePath.endsWith('.json')) {
-      if (typeof state.data !== 'string')
-        throw new Error('Please provide `data` as a JSON stringified object')
+        if (hookable)
+          await hookable.callHook('onFileOutputJsonMerge', state)
 
-      if (hookable)
-        await hookable.callHook('onFileOutputJsonMerge', mergeState)
+        state.data = state.result ?? JSON.stringify(
+          defu(JSON.parse(state.data), JSON.parse(await readFile(state.filePath, 'utf-8'))),
+          undefined,
+          2,
+        )
+        break
+      }
+      case 'concat': {
+        if (hookable)
+          await hookable.callHook('onFileOutputOtherMerge', state)
 
-      state.data = mergeState.result ?? JSON.stringify(
-        defu(JSON.parse(state.data), JSON.parse(await readFile(state.filePath, 'utf-8'))),
-        undefined,
-        2,
-      )
-    }
-    // simple concat for other files
-    else if (mergeContent === true) {
-      if (hookable)
-        await hookable.callHook('onFileOutputOtherMerge', mergeState)
-
-      state.data = mergeState.result ?? Buffer.concat([await readFile(state.filePath), Buffer.from(state.data)]).toString()
+        state.data = state.result ?? Buffer.concat([await readFile(state.filePath), Buffer.from(state.data)]).toString()
+        break
+      }
+      default:
+        throw new Error(`Unexpected merge type: ${state.mergeType}`)
     }
   }
 
