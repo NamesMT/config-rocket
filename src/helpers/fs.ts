@@ -19,7 +19,7 @@ export interface FileOutputHooks extends Hooks {
 
   onFileOutputJsonMerge: (state: FileOutputState) => void | Promise<void>
 
-  onFileOutputOtherMerge: (state: FileOutputState) => void | Promise<void>
+  onFileOutputConcatMerge: (state: FileOutputState) => void | Promise<void>
 }
 
 export interface FileOutputOptions {
@@ -87,7 +87,7 @@ export async function fileOutput(filePath: string, data: string, options?: FileO
       }
       case 'concat': {
         if (hookable)
-          await hookable.callHook('onFileOutputOtherMerge', state)
+          await hookable.callHook('onFileOutputConcatMerge', state)
 
         state.data = state.result ?? Buffer.concat([await readFile(state.filePath), Buffer.from(state.data)]).toString()
         break
