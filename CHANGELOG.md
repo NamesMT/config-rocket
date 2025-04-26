@@ -1,6 +1,28 @@
 # Changelog
 
 
+## v0.3.12
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.11...v0.3.12)
+
+### 🚀 Enhancements
+
+- Refactor `fileOutput`, improve hook system power & flexibility ([4cd2c02](https://github.com/namesmt/config-rocket/commit/4cd2c02))
+
+### 💅 Refactors
+
+- ⚠️  Reword `onFileOutputOtherMerge` to `onFileOutputConcatMerge` ([3eb74f0](https://github.com/namesmt/config-rocket/commit/3eb74f0))
+- **FileOutputState:** ⚠️  Rename `result` => `mergeResult` for better clarity ([e4d162a](https://github.com/namesmt/config-rocket/commit/e4d162a))
+
+#### ⚠️ Breaking Changes
+
+- ⚠️  Reword `onFileOutputOtherMerge` to `onFileOutputConcatMerge` ([3eb74f0](https://github.com/namesmt/config-rocket/commit/3eb74f0))
+- **FileOutputState:** ⚠️  Rename `result` => `mergeResult` for better clarity ([e4d162a](https://github.com/namesmt/config-rocket/commit/e4d162a))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.3.11
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.10...v0.3.11)
