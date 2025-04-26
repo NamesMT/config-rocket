@@ -2,7 +2,7 @@
   "name": "config-rocket",
   "type": "module",
   "version": "0.3.6",
-  "packageManager": "pnpm@10.8.0",
+  "packageManager": "pnpm@10.9.0",
   "description": "Easily create and deploy configurable config packs!",
   "author": "NamesMT <dangquoctrung123@gmail.com>",
   "license": "MIT",
@@ -64,20 +64,20 @@
     "hookable": "^5.5.3",
     "pathe": "^2.0.3",
     "std-env": "^3.9.0",
-    "tinyglobby": "^0.2.12"
+    "tinyglobby": "^0.2.13"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^4.12.0",
     "@namesmt/utils": "^0.5.10",
-    "@types/node": "^22.14.1",
-    "@vitest/coverage-v8": "^3.1.1",
-    "eslint": "^9.24.0",
+    "@types/node": "^22.15.2",
+    "@vitest/coverage-v8": "^3.1.2",
+    "eslint": "^9.25.1",
     "lint-staged": "^15.5.1",
-    "simple-git-hooks": "^2.12.1",
+    "simple-git-hooks": "^2.13.0",
     "tsx": "^4.19.3",
     "typescript": "^5.8.3",
     "unbuild": "^3.5.0",
-    "vitest": "^3.1.1"
+    "vitest": "^3.1.2"
   },
   "pnpm": {
     "overrides": {
