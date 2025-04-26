@@ -19,8 +19,8 @@
 `config-rocket` is a toolkit/engine that helps you create or install configurable config packs.
 
 * `CR` for users:
-  + Super easy, safe install of any `config pack`, whether its a public one shared by your friend, or your own, privately-stored.
-    + `config-rocket` does not allow any code execution, so the installation of a `config pack` is safe, but you should verify if the files after unpacked are what you expect.
+  + Super easy, safe install of any `config pack` and zip archives, whether its a public one shared by your friend, or your own, privately-stored.
+    + `config-rocket` does not allow any code execution, so the installation of a `config pack` is safe, but you should verify that the archive contains the files that you expect.
 
 * `CR` for creators:
   * Type-safety and autocompletion while crafting your `config pack`.
