@@ -1,6 +1,28 @@
 # Changelog
 
 
+## v0.3.7
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.6...v0.3.7)
+
+### 🚀 Enhancements
+
+- **unpack:** Ability to configure non-rocket archive behavior ([3675fc1](https://github.com/namesmt/config-rocket/commit/3675fc1))
+- Add `rocket-zip` cli app ([1640c6e](https://github.com/namesmt/config-rocket/commit/1640c6e))
+
+### 🏡 Chore
+
+- Update deps ([ace0fd3](https://github.com/namesmt/config-rocket/commit/ace0fd3))
+
+### ✅ Tests
+
+- **helpers/fs:** Fix fails due to format update commit, style refactors ([26fd97b](https://github.com/namesmt/config-rocket/commit/26fd97b))
+- **rocket/unpack:** Add tests ([80ed8f8](https://github.com/namesmt/config-rocket/commit/80ed8f8))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.3.6
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.5...v0.3.6)
