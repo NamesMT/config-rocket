@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { readFile, writeFile } from 'node:fs/promises'
 import { defineCommand, runMain } from 'citty'
 import consola from 'consola'

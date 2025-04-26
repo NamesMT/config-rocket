@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { defineCommand, runMain } from 'citty'
 import { getValidGhRepoReleaseAssets, promptSelectGhAsset } from '~/cli/gh-repo'
 import { unpackFromUrl } from '~/cli/unpack'
