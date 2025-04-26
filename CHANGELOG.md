@@ -1,6 +1,23 @@
 # Changelog
 
 
+## v0.3.10
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.9...v0.3.10)
+
+### 🏡 Chore
+
+- ⚠️  Remove cjs ([bfebd3f](https://github.com/namesmt/config-rocket/commit/bfebd3f))
+- Add node shebang to cli entries ([4566022](https://github.com/namesmt/config-rocket/commit/4566022))
+
+#### ⚠️ Breaking Changes
+
+- ⚠️  Remove cjs ([bfebd3f](https://github.com/namesmt/config-rocket/commit/bfebd3f))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.3.9
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.8...v0.3.9)
