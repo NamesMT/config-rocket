@@ -66,8 +66,9 @@ export async function fileOutput(filePath: string, data: string, options?: FileO
   // Optimistically create the directory
   await mkdir(dirname(state.filePath), { recursive: true })
 
+  const isValidFileToMerge = mergeContent === true || (mergeContent === 'json' && state.filePath.endsWith('.json'))
   const checkFileExists = () => access(state.filePath).then(() => true).catch(() => false)
-  if (mergeContent && await checkFileExists()) {
+  if (isValidFileToMerge && await checkFileExists()) {
     logger.info(`Merging file "${state.filePath}"...`)
 
     const mergeState = {
