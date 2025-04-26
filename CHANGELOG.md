@@ -1,6 +1,22 @@
 # Changelog
 
 
+## v0.3.11
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.10...v0.3.11)
+
+### 🩹 Fixes
+
+- **fileOutput:** Only print merge message if it would actually be merged ([7b8d7c7](https://github.com/namesmt/config-rocket/commit/7b8d7c7))
+
+### 🌊 Types
+
+- **FileOutputHooks:** `result` type correction ([bb5024e](https://github.com/namesmt/config-rocket/commit/bb5024e))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.3.10
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.9...v0.3.10)

@@ -1,7 +1,7 @@
 {
   "name": "config-rocket",
   "type": "module",
-  "version": "0.3.10",
+  "version": "0.3.11",
   "packageManager": "pnpm@10.9.0",
   "description": "Easily create and deploy configurable config packs!",
   "author": "NamesMT <dangquoctrung123@gmail.com>",
