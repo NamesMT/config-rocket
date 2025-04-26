@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.3.8
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.7...v0.3.8)
+
+### 🩹 Fixes
+
+- Bad binary ref ([79a1e65](https://github.com/namesmt/config-rocket/commit/79a1e65))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.3.7
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.6...v0.3.7)
