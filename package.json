@@ -18,13 +18,11 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
+      "import": "./dist/index.mjs"
     },
     "./cli": {
       "types": "./dist/cli.d.mts",
-      "import": "./dist/cli.mjs",
-      "require": "./dist/cli.cjs"
+      "import": "./dist/cli.mjs"
     }
   },
   "source": "./src/index.ts",
@@ -32,8 +30,8 @@
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
   "bin": {
-    "config-rocket": "./dist/cli-entry.cjs",
-    "rocket-zip": "./dist/cli-rocket-zip-entry.cjs"
+    "config-rocket": "./dist/cli-entry.mjs",
+    "rocket-zip": "./dist/cli-rocket-zip-entry.mjs"
   },
   "files": [
     "dist"
