@@ -15,13 +15,13 @@ export interface FileOutputHooks extends Hooks {
   onFileOutputJsonMerge: (args: ReactiveArgs<{
     filePath: string
     data: string
-    result?: string
+    result: undefined | string
   }>) => void | Promise<void>
 
   onFileOutputOtherMerge: (args: ReactiveArgs<{
     filePath: string
     data: string
-    result?: string
+    result: undefined | string
   }>) => void | Promise<void>
 }
 
