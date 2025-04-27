@@ -32,6 +32,10 @@ const main = defineCommand({
       ].join('\n'),
       default: undefined,
     },
+    sha256: {
+      type: 'string',
+      description: `If specified, will verify the downloaded archive's sha256 hash (base64url)`,
+    },
   },
   async run({ args }) {
     const {
@@ -39,13 +43,14 @@ const main = defineCommand({
       repo,
       pack,
       nonAssemblyBehavior,
+      sha256,
     } = args
 
     if (!url && !repo)
       throw new Error('`url` or `repo` is required')
 
     if (url)
-      return await unpackFromUrl(url, { nonAssemblyBehavior })
+      return await unpackFromUrl(url, { nonAssemblyBehavior, sha256 })
 
     const repoPatternMatch = repo.match(/^([\w-]+)\/([\w-]+)$/)
     if (!repoPatternMatch)
@@ -64,7 +69,7 @@ const main = defineCommand({
     if (!selectedAsset)
       throw new Error(`pack "${pack}" is not found in the latest release of "${owner}/${name}"`)
 
-    return await unpackFromUrl(selectedAsset.browser_download_url, { nonAssemblyBehavior })
+    return await unpackFromUrl(selectedAsset.browser_download_url, { nonAssemblyBehavior, sha256 })
   },
 })
 

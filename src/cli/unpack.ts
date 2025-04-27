@@ -6,6 +6,7 @@ import { rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import consola from 'consola'
 import { strFromU8, unzip } from 'fflate'
+import { createSha256 } from '~/helpers/crypto'
 import { fileOutput } from '~/helpers/fs'
 import { logger } from '~/helpers/logger'
 import { rocketAssemble } from '~/rocket/assemble'
@@ -32,12 +33,18 @@ export interface UnpackOptions {
    * @default 'prompt'
    */
   nonAssemblyBehavior?: 'prompt' | true | false
+
+  /**
+   * If specified, will verify the downloaded archive's sha256 hash (base64url)
+   */
+  sha256?: string
 }
 
 export async function unpackFromUrl(url: string, options?: UnpackOptions) {
   const {
     hookable,
     nonAssemblyBehavior = 'prompt',
+    sha256,
   } = options ?? {}
 
   logger.info(`Downloading archive from ${url}`)
@@ -47,6 +54,12 @@ export async function unpackFromUrl(url: string, options?: UnpackOptions) {
     throw new Error(`Failed to download archive from ${url}`)
 
   const configPackBuffer = new Uint8Array(await res.arrayBuffer())
+
+  if (sha256) {
+    const configPackSha256 = await createSha256(configPackBuffer)
+    if (configPackSha256 !== sha256)
+      throw new Error(`The downloaded archive's sha256 is invalid, expected: ${sha256}, got: ${configPackSha256}`)
+  }
 
   logger.start('Extracting archive (to `.tmp` if needed)...')
   let isRocketAssembly = true
