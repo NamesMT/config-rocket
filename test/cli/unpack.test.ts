@@ -10,9 +10,14 @@ import { fileOutput } from '~/helpers/fs'
 import { logger } from '~/helpers/logger'
 import { rocketAssemble } from '~/rocket/assemble'
 
-vi.mock('node:fs/promises', () => ({
-  rm: vi.fn().mockResolvedValue(undefined),
-}))
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs/promises')>()
+  return {
+    ...actual,
+    rm: vi.fn().mockResolvedValue(undefined),
+    mkdtemp: vi.fn().mockResolvedValue('/tmp/config-rocket-mock123'),
+  }
+})
 vi.mock('~/helpers/fs', () => ({
   fileOutput: vi.fn().mockResolvedValue(undefined),
 }))
@@ -53,6 +58,9 @@ function createMockZip(files: Record<string, string>): Promise<Uint8Array> {
     })
   })
 }
+
+// Base shared variable
+const expectedTmpDir = '/tmp/config-rocket-mock123' // Matches the mocked value
 
 describe('unpackFromUrl', () => {
   const mockUrl = 'http://example.com/pack.zip'
@@ -97,23 +105,23 @@ describe('unpackFromUrl', () => {
     // Assert
     expect(mockFetch).toHaveBeenCalledWith(mockUrl)
     expect(logger.info).toHaveBeenCalledWith(`Downloading archive from ${mockUrl}`)
-    expect(logger.start).toHaveBeenCalledWith('Extracting archive (to `.tmp` if needed)...')
+    expect(logger.start).toHaveBeenCalledWith('Extracting archive...')
+    expect(vi.mocked(await import('node:fs/promises')).mkdtemp).toHaveBeenCalled()
     expect(mockUnzip).toHaveBeenCalled()
     expect(fileOutput).toHaveBeenCalledTimes(3)
-    expect(fileOutput).toHaveBeenCalledWith('.tmp/rocket.config.json5', '{ "name": "test-pack" }', { hookable: undefined })
-    expect(fileOutput).toHaveBeenCalledWith('.tmp/frame/file1.txt', 'frame content', { hookable: undefined })
-    expect(fileOutput).toHaveBeenCalledWith('.tmp/fuel/file2.txt', 'fuel content', { hookable: undefined })
+    expect(fileOutput).toHaveBeenCalledWith(`${expectedTmpDir}/rocket.config.json5`, '{ "name": "test-pack" }', { hookable: undefined })
+    expect(fileOutput).toHaveBeenCalledWith(`${expectedTmpDir}/frame/file1.txt`, 'frame content', { hookable: undefined })
+    expect(fileOutput).toHaveBeenCalledWith(`${expectedTmpDir}/fuel/file2.txt`, 'fuel content', { hookable: undefined })
     expect(logger.success).toHaveBeenCalledWith('Extracted successfully.')
     expect(logger.start).toHaveBeenCalledWith('Assembling the config according to `rocketConfig`...')
     expect(rocketAssemble).toHaveBeenCalledWith({
-      frameDir: '.tmp/frame',
-      fuelDir: '.tmp/fuel',
+      frameDir: `${expectedTmpDir}/frame`,
+      fuelDir: `${expectedTmpDir}/fuel`,
       outDir: '.',
       hookable: undefined,
     })
-    expect(logger.start).toHaveBeenCalledWith('Assembled successfully, removing temporary files...')
-    expect(rm).toHaveBeenCalledWith('.tmp', { recursive: true })
-    expect(logger.success).toHaveBeenCalledWith('All done, enjoy your new config!')
+    expect(logger.success).toHaveBeenCalledWith('Assembled successfully, enjoy your new configs!')
+    expect(rm).toHaveBeenCalledWith(expectedTmpDir, { recursive: true })
   })
 
   it('should handle download failure', async () => {
@@ -148,12 +156,12 @@ describe('unpackFromUrl', () => {
     // Act & Assert
     await expect(unpackFromUrl(mockUrl)).rejects.toThrow('Failed to extract the archive.')
     expect(logger.info).toHaveBeenCalledWith(`Downloading archive from ${mockUrl}`)
-    expect(logger.start).toHaveBeenCalledWith('Extracting archive (to `.tmp` if needed)...')
+    expect(logger.start).toHaveBeenCalledWith('Extracting archive...')
     expect(mockUnzip).toHaveBeenCalled()
     expect(fileOutput).not.toHaveBeenCalled()
     expect(logger.success).not.toHaveBeenCalledWith('Extracted successfully.')
     expect(rocketAssemble).not.toHaveBeenCalled()
-    expect(rm).not.toHaveBeenCalled()
+    expect(rm).toHaveBeenCalled()
   })
 
   it('should extract non-assembly directly when nonAssemblyBehavior is true', async () => {
@@ -181,15 +189,14 @@ describe('unpackFromUrl', () => {
 
     // Assert
     expect(mockFetch).toHaveBeenCalledWith(mockUrl)
-    expect(logger.start).toHaveBeenCalledWith('Extracting archive (to `.tmp` if needed)...')
+    expect(logger.start).toHaveBeenCalledWith('Extracting archive...')
     expect(mockUnzip).toHaveBeenCalled()
     expect(fileOutput).toHaveBeenCalledTimes(2)
     expect(fileOutput).toHaveBeenCalledWith('some_file.txt', 'some content', { hookable: undefined })
     expect(fileOutput).toHaveBeenCalledWith('another_dir/data.json', '{"key": "value"}', { hookable: undefined })
     expect(logger.success).toHaveBeenCalledWith('Extracted successfully.')
-    // Should not assemble or remove .tmp
     expect(rocketAssemble).not.toHaveBeenCalled()
-    expect(rm).not.toHaveBeenCalled()
+    expect(rm).toHaveBeenCalled()
   })
 
   it('should abort non-assembly extraction when nonAssemblyBehavior is false', async () => {
@@ -210,12 +217,12 @@ describe('unpackFromUrl', () => {
     await expect(unpackFromUrl(mockUrl, { nonAssemblyBehavior: false }))
       .rejects
       .toThrow('Invalid config pack: "rocket.config.json5" not found.')
-    expect(logger.start).toHaveBeenCalledWith('Extracting archive (to `.tmp` if needed)...')
+    expect(logger.start).toHaveBeenCalledWith('Extracting archive...')
     expect(mockUnzip).toHaveBeenCalled()
     expect(fileOutput).not.toHaveBeenCalled() // Should abort before writing files
     expect(logger.success).not.toHaveBeenCalledWith('Extracted successfully.')
     expect(rocketAssemble).not.toHaveBeenCalled()
-    expect(rm).not.toHaveBeenCalled()
+    expect(rm).toHaveBeenCalled()
   })
 
   it('should prompt and continue non-assembly extraction when user confirms', async () => {
@@ -245,7 +252,7 @@ describe('unpackFromUrl', () => {
     expect(fileOutput).toHaveBeenCalledWith('some_file.txt', 'content', { hookable: undefined })
     expect(logger.success).toHaveBeenCalledWith('Extracted successfully.')
     expect(rocketAssemble).not.toHaveBeenCalled()
-    expect(rm).not.toHaveBeenCalled()
+    expect(rm).toHaveBeenCalled()
   })
 
   it('should prompt and abort non-assembly extraction when user cancels', async () => {
@@ -271,7 +278,7 @@ describe('unpackFromUrl', () => {
     expect(fileOutput).not.toHaveBeenCalled()
     expect(logger.success).not.toHaveBeenCalledWith('Extracted successfully.')
     expect(rocketAssemble).not.toHaveBeenCalled()
-    expect(rm).not.toHaveBeenCalled()
+    expect(rm).toHaveBeenCalled()
   })
 
   it('should successfully unpack when sha256 matches', async () => {
@@ -305,7 +312,7 @@ describe('unpackFromUrl', () => {
     expect(logger.info).toHaveBeenCalledWith(`Downloading archive from ${mockUrl}`)
     // Check that assembly happened (implies sha256 check passed)
     expect(rocketAssemble).toHaveBeenCalled()
-    expect(rm).toHaveBeenCalledWith('.tmp', { recursive: true })
+    expect(rm).toHaveBeenCalledWith(expectedTmpDir, { recursive: true })
   })
 
   it('should throw an error when sha256 does not match', async () => {

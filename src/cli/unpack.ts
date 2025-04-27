@@ -2,7 +2,8 @@ import type { FlateError, Unzipped } from 'fflate'
 import type { Hookable, Hooks } from 'hookable'
 import type { FileOutputHooks } from '~/helpers/fs'
 import type { RocketAssembleHooks } from '~/rocket/assemble'
-import { rm } from 'node:fs/promises'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import consola from 'consola'
 import { strFromU8, unzip } from 'fflate'
@@ -61,54 +62,61 @@ export async function unpackFromUrl(url: string, options?: UnpackOptions) {
       throw new Error(`The downloaded archive's sha256 is invalid, expected: ${sha256}, got: ${configPackSha256}`)
   }
 
-  logger.start('Extracting archive (to `.tmp` if needed)...')
+  logger.start('Extracting archive...')
   let isRocketAssembly = true
   let nonAssemblyContinue = typeof nonAssemblyBehavior === 'boolean' ? nonAssemblyBehavior : null
-  await new Promise<void>((resolvePromise, rejectPromise) => {
-    unzip(configPackBuffer, async (err, unzipped) => {
-      if (err)
-        return rejectPromise(new Error('Failed to extract the archive.'))
+  const tmpDir = await mkdtemp(join(tmpdir(), 'config-rocket-'))
+  // If for some reason we don't have permission to write to os temp dir, fallback to cwd
+    .catch(() => mkdtemp('.tmp-config-rocket-'))
+  try {
+    await new Promise<void>((resolvePromise, rejectPromise) => {
+      unzip(configPackBuffer, async (err, unzipped) => {
+        if (err)
+          return rejectPromise(new Error('Failed to extract the archive.'))
 
-      if (hookable)
-        hookable.callHook('onExtract', { err, unzipped })
+        if (hookable)
+          hookable.callHook('onExtract', { err, unzipped })
 
-      if (!unzipped['rocket.config.json5']) {
-        isRocketAssembly = false
+        if (!unzipped['rocket.config.json5']) {
+          isRocketAssembly = false
 
-        if (typeof nonAssemblyContinue !== 'boolean' && nonAssemblyBehavior === 'prompt') {
-          nonAssemblyContinue = await consola.prompt(
-            'Archive is not a valid rocket config pack, do you want to continue extract anyway?',
-            { type: 'confirm', cancel: 'null' },
+          if (typeof nonAssemblyContinue !== 'boolean' && nonAssemblyBehavior === 'prompt') {
+            nonAssemblyContinue = await consola.prompt(
+              'Archive is not a valid rocket config pack, do you want to continue extract anyway?',
+              { type: 'confirm', cancel: 'null' },
+            )
+          }
+
+          if (!nonAssemblyContinue)
+            return rejectPromise(new Error('Invalid config pack: "rocket.config.json5" not found.'))
+        }
+
+        for (const [key, value] of Object.entries(unzipped)) {
+          await fileOutput(
+            isRocketAssembly ? join(tmpDir, key) : key,
+            strFromU8(value),
+            { hookable },
           )
         }
 
-        if (!nonAssemblyContinue)
-          return rejectPromise(new Error('Invalid config pack: "rocket.config.json5" not found.'))
-      }
-
-      for (const [key, value] of Object.entries(unzipped)) {
-        await fileOutput(
-          isRocketAssembly ? join('.tmp', key) : key,
-          strFromU8(value),
-          { hookable },
-        )
-      }
-
-      resolvePromise()
+        resolvePromise()
+      })
     })
-  })
-  logger.success('Extracted successfully.')
+    logger.success('Extracted successfully.')
 
-  if (isRocketAssembly) {
-    logger.start('Assembling the config according to `rocketConfig`...')
-    await rocketAssemble({
-      frameDir: join('.tmp', 'frame'),
-      fuelDir: join('.tmp', 'fuel'),
-      outDir: '.',
-      hookable,
-    })
-    logger.start('Assembled successfully, removing temporary files...')
-    await rm('.tmp', { recursive: true })
-    logger.success('All done, enjoy your new config!')
+    if (isRocketAssembly) {
+      logger.start('Assembling the config according to `rocketConfig`...')
+      await rocketAssemble({
+        frameDir: join(tmpDir, 'frame'),
+        fuelDir: join(tmpDir, 'fuel'),
+        outDir: '.',
+        hookable,
+      })
+      logger.success('Assembled successfully, enjoy your new configs!')
+    }
+  }
+  finally {
+    await rm(tmpDir, { recursive: true })
+      .catch(() => { throw new Error('Failed to remove tmpDir') })
   }
 }
