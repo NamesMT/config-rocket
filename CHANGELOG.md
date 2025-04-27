@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.3.15
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.14...v0.3.15)
+
+### 🚀 Enhancements
+
+- Add `cwd` option, some styling changes ([375dc0a](https://github.com/namesmt/config-rocket/commit/375dc0a))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.3.14
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.13...v0.3.14)
