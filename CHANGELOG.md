@@ -1,6 +1,19 @@
 # Changelog
 
 
+## v0.3.14
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.13...v0.3.14)
+
+### 🏡 Chore
+
+- Minor example update ([c0a558b](https://github.com/namesmt/config-rocket/commit/c0a558b))
+- Improve tmp dir handling during unpack ([ead0d7a](https://github.com/namesmt/config-rocket/commit/ead0d7a))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.3.13
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.12...v0.3.13)
