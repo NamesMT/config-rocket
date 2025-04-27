@@ -49,8 +49,12 @@ const main = defineCommand({
     if (!url && !repo)
       throw new Error('`url` or `repo` is required')
 
-    if (url)
-      return await unpackFromUrl(url, { nonAssemblyBehavior, sha256 })
+    if (url) {
+      return await unpackFromUrl(url, {
+        nonAssemblyBehavior,
+        sha256,
+      })
+    }
 
     const repoPatternMatch = repo.match(/^([\w-]+)\/([\w-]+)$/)
     if (!repoPatternMatch)
@@ -69,7 +73,10 @@ const main = defineCommand({
     if (!selectedAsset)
       throw new Error(`pack "${pack}" is not found in the latest release of "${owner}/${name}"`)
 
-    return await unpackFromUrl(selectedAsset.browser_download_url, { nonAssemblyBehavior, sha256 })
+    return await unpackFromUrl(selectedAsset.browser_download_url, {
+      nonAssemblyBehavior,
+      sha256,
+    })
   },
 })
 

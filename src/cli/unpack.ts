@@ -4,9 +4,9 @@ import type { FileOutputHooks } from '~/helpers/fs'
 import type { RocketAssembleHooks } from '~/rocket/assemble'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
-import consola from 'consola'
+import { consola } from 'consola'
 import { strFromU8, unzip } from 'fflate'
+import { join, resolve } from 'pathe'
 import { createSha256 } from '~/helpers/crypto'
 import { fileOutput } from '~/helpers/fs'
 import { logger } from '~/helpers/logger'
@@ -39,6 +39,8 @@ export interface UnpackOptions {
    * If specified, will verify the downloaded archive's sha256 hash (base64url)
    */
   sha256?: string
+
+  cwd?: string
 }
 
 export async function unpackFromUrl(url: string, options?: UnpackOptions) {
@@ -46,6 +48,7 @@ export async function unpackFromUrl(url: string, options?: UnpackOptions) {
     hookable,
     nonAssemblyBehavior = 'prompt',
     sha256,
+    cwd = resolve(),
   } = options ?? {}
 
   logger.info(`Downloading archive from ${url}`)
@@ -67,7 +70,7 @@ export async function unpackFromUrl(url: string, options?: UnpackOptions) {
   let nonAssemblyContinue = typeof nonAssemblyBehavior === 'boolean' ? nonAssemblyBehavior : null
   const tmpDir = await mkdtemp(join(tmpdir(), 'config-rocket-'))
   // If for some reason we don't have permission to write to os temp dir, fallback to cwd
-    .catch(() => mkdtemp('.tmp-config-rocket-'))
+    .catch(() => mkdtemp(join(cwd, '.tmp-config-rocket-')))
   try {
     await new Promise<void>((resolvePromise, rejectPromise) => {
       unzip(configPackBuffer, async (err, unzipped) => {
@@ -93,7 +96,7 @@ export async function unpackFromUrl(url: string, options?: UnpackOptions) {
 
         for (const [key, value] of Object.entries(unzipped)) {
           await fileOutput(
-            isRocketAssembly ? join(tmpDir, key) : key,
+            isRocketAssembly ? join(tmpDir, key) : join(cwd, key),
             strFromU8(value),
             { hookable },
           )
@@ -109,7 +112,7 @@ export async function unpackFromUrl(url: string, options?: UnpackOptions) {
       await rocketAssemble({
         frameDir: join(tmpDir, 'frame'),
         fuelDir: join(tmpDir, 'fuel'),
-        outDir: '.',
+        outDir: cwd,
         hookable,
       })
       logger.success('Assembled successfully, enjoy your new configs!')
