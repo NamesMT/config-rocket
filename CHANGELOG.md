@@ -1,6 +1,24 @@
 # Changelog
 
 
+## v0.3.13
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.12...v0.3.13)
+
+### 🚀 Enhancements
+
+- Allow configuring `nonAssemblyBehavior` via  CLI ([a75a15e](https://github.com/namesmt/config-rocket/commit/a75a15e))
+- Allow specifying config pack for repo mode via CLI arg ([77afddc](https://github.com/namesmt/config-rocket/commit/77afddc))
+- Add ability to verify sha256 ([ee20071](https://github.com/namesmt/config-rocket/commit/ee20071))
+
+### 🏡 Chore
+
+- **cli:** Exports all used helpers ([01a0a3c](https://github.com/namesmt/config-rocket/commit/01a0a3c))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.3.12
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.11...v0.3.12)
