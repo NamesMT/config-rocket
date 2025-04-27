@@ -16,7 +16,11 @@ const main = defineCommand({
     },
     repo: {
       type: 'string',
-      description: 'The github repository slug (e.g: NamesMT/roo-rocket)',
+      description: 'The github repository slug (e.g: NamesMT/roo-rocket), will list out available archives from latest release.',
+    },
+    pack: {
+      type: 'string',
+      description: 'The config pack name to auto-select from the repo',
     },
     nonAssemblyBehavior: {
       type: 'boolean',
@@ -30,7 +34,12 @@ const main = defineCommand({
     },
   },
   async run({ args }) {
-    const { url, repo, nonAssemblyBehavior } = args
+    const {
+      url,
+      repo,
+      pack,
+      nonAssemblyBehavior,
+    } = args
 
     if (!url && !repo)
       throw new Error('`url` or `repo` is required')
@@ -47,7 +56,13 @@ const main = defineCommand({
     if (!availableAssets.length)
       throw new Error(`No assets found for "${owner}/${name}"'s latest release`)
 
-    const selectedAsset = await promptSelectGhAsset(availableAssets)
+    const selectedAsset = pack
+      ? availableAssets.find(a => a.name === pack)
+      : await promptSelectGhAsset(availableAssets)
+
+    // This is only encountered if user provided a pack name, so error message is specific to it
+    if (!selectedAsset)
+      throw new Error(`pack "${pack}" is not found in the latest release of "${owner}/${name}"`)
 
     return await unpackFromUrl(selectedAsset.browser_download_url, { nonAssemblyBehavior })
   },
