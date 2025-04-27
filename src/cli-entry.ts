@@ -16,7 +16,7 @@ const main = defineCommand({
     },
     repo: {
       type: 'string',
-      description: 'The github repository slug (e.g: NamesMT/roo-rocket), will list out available archives from latest release.',
+      description: 'The github repository slug (e.g: NamesMT/config-packs), will list out available archives from latest release.',
     },
     pack: {
       type: 'string',
