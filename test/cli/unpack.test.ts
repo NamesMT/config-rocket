@@ -5,6 +5,7 @@ import consola from 'consola'
 import { strToU8, zip } from 'fflate'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { unpackFromUrl } from '~/cli/unpack'
+import { createSha256 } from '~/helpers/crypto'
 import { fileOutput } from '~/helpers/fs'
 import { logger } from '~/helpers/logger'
 import { rocketAssemble } from '~/rocket/assemble'
@@ -269,6 +270,67 @@ describe('unpackFromUrl', () => {
     expect(consola.prompt).toHaveBeenCalled()
     expect(fileOutput).not.toHaveBeenCalled()
     expect(logger.success).not.toHaveBeenCalledWith('Extracted successfully.')
+    expect(rocketAssemble).not.toHaveBeenCalled()
+    expect(rm).not.toHaveBeenCalled()
+  })
+
+  it('should successfully unpack when sha256 matches', async () => {
+    // Arrange
+    const mockFiles = {
+      'rocket.config.json5': '{ "name": "test-pack" }',
+      'frame/file1.txt': 'frame content',
+    }
+    const mockZipData = await createMockZip(mockFiles)
+    const expectedSha256 = await createSha256(mockZipData)
+
+    mockFetch.mockResolvedValue({
+      ok: true,
+      arrayBuffer: async () => mockZipData.buffer,
+    })
+    const mockUnzip = vi.mocked(await import('fflate')).unzip
+    mockUnzip.mockImplementation((_buffer, callback) => {
+      const unzipped = {
+        'rocket.config.json5': strToU8(mockFiles['rocket.config.json5']),
+        'frame/file1.txt': strToU8(mockFiles['frame/file1.txt']),
+      }
+      setTimeout(() => callback(null, unzipped), 0)
+      return vi.fn()
+    })
+
+    // Act
+    await unpackFromUrl(mockUrl, { sha256: expectedSha256 })
+
+    // Assert
+    expect(mockFetch).toHaveBeenCalledWith(mockUrl)
+    expect(logger.info).toHaveBeenCalledWith(`Downloading archive from ${mockUrl}`)
+    // Check that assembly happened (implies sha256 check passed)
+    expect(rocketAssemble).toHaveBeenCalled()
+    expect(rm).toHaveBeenCalledWith('.tmp', { recursive: true })
+  })
+
+  it('should throw an error when sha256 does not match', async () => {
+    // Arrange
+    const mockFiles = { 'file.txt': 'content' }
+    const mockZipData = await createMockZip(mockFiles)
+    const incorrectSha256 = 'incorrect-hash-value'
+    const actualSha256 = await createSha256(mockZipData)
+
+    mockFetch.mockResolvedValue({
+      ok: true,
+      arrayBuffer: async () => mockZipData.buffer,
+    })
+    // No need to mock unzip as it should fail before that
+
+    // Act & Assert
+    await expect(unpackFromUrl(mockUrl, { sha256: incorrectSha256 }))
+      .rejects
+      .toThrow(`The downloaded archive's sha256 is invalid, expected: ${incorrectSha256}, got: ${actualSha256}`)
+
+    expect(mockFetch).toHaveBeenCalledWith(mockUrl)
+    expect(logger.info).toHaveBeenCalledWith(`Downloading archive from ${mockUrl}`)
+    // Ensure extraction and assembly did not happen
+    expect(vi.mocked(await import('fflate')).unzip).not.toHaveBeenCalled()
+    expect(fileOutput).not.toHaveBeenCalled()
     expect(rocketAssemble).not.toHaveBeenCalled()
     expect(rm).not.toHaveBeenCalled()
   })
