@@ -78,7 +78,7 @@ export async function unpackFromUrl(url: string, options?: UnpackOptions) {
           return rejectPromise(new Error('Failed to extract the archive.'))
 
         if (hookable)
-          hookable.callHook('onExtract', { err, unzipped })
+          await hookable.callHook('onExtract', { err, unzipped })
 
         if (!unzipped['rocket.config.json5']) {
           isRocketAssembly = false
