@@ -2,6 +2,7 @@ import type { Unzipped } from 'fflate'
 import type { Hookable, Hooks } from 'hookable'
 import type { FileOutputHooks } from '~/helpers/fs'
 import type { RocketAssembleHooks } from '~/rocket/assemble'
+import type { ParseRocketConfigHooks } from '~/rocket/config'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { promisify } from 'node:util'
@@ -25,7 +26,7 @@ export interface UnpackOptions {
   /**
    * A hookable instance to hook into the rocket unpack (and related) process.
    */
-  hookable?: Hookable<RocketUnpackHooks & RocketAssembleHooks & FileOutputHooks>
+  hookable?: Hookable<RocketUnpackHooks & RocketAssembleHooks & ParseRocketConfigHooks & FileOutputHooks>
 
   /**
    * Control the behavior when the downloaded archive is not a rocket config pack.

@@ -1,4 +1,5 @@
 import type { Hookable, Hooks } from 'hookable'
+import type { ParseRocketConfigHooks } from './config'
 import type { FileOutputHooks } from '~/helpers/fs'
 import type { ReactiveArgs } from '~/types'
 import { readFile } from 'node:fs/promises'
@@ -153,7 +154,7 @@ export interface RocketAssembleOptions {
   /**
    * A hookable instance to hook into the rocket assemble (and related) process.
    */
-  hookable?: Hookable<RocketAssembleHooks & FileOutputHooks>
+  hookable?: Hookable<RocketAssembleHooks & ParseRocketConfigHooks & FileOutputHooks>
 }
 export async function rocketAssemble(options: RocketAssembleOptions) {
   const {
@@ -166,7 +167,7 @@ export async function rocketAssemble(options: RocketAssembleOptions) {
 
   const rocketConfigPath = rocketConfig ?? resolve(frameDir, '../rocket.config')
 
-  const { resolvedVariables, resolvedExcludes, resolvedFilesBuilder } = await parseRocketConfig(rocketConfigPath)
+  const { resolvedVariables, resolvedExcludes, resolvedFilesBuilder } = await parseRocketConfig(rocketConfigPath, { hookable })
 
   const fueledVariables = await supplyFuel(resolvedVariables, fuelDir)
   const fueledFilesBuilder: Record<string, { filePath: string, content: string }> = await supplyFuelToResolvedFilesBuilder(resolvedFilesBuilder, fuelDir)

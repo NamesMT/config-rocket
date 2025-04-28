@@ -1,4 +1,5 @@
 import type { UserInputConfig } from 'c12'
+import type { Hookable, Hooks } from 'hookable'
 import { readFile } from 'node:fs/promises'
 import { objectPick } from '@namesmt/utils'
 import { loadConfig } from 'c12'
@@ -161,28 +162,98 @@ export async function loadRocketConfig(configOrPath: RocketConfig | string) {
   return config
 }
 
-export async function parseRocketConfig(configOrPath: RocketConfig | string) {
+export interface ParseRocketConfigHooks extends Hooks {
+  /**
+   * `parameter` and `resolvedParameters` are mutable, the resolver fn will not be called for parameters that already has a resolved value.
+   */
+  onParameter: (props: {
+    parameter: RocketConfigParameter
+    resolvedParameters: Record<string, string | boolean>
+  }) => void | Promise<void>
+
+  /**
+   * `variableResolver` and `resolvedVariables` are mutable, the resolver fn will not be called for variables that already has a resolved value.
+   */
+  onVariableResolver: (props: {
+    variableResolver: [variableName: string, resolverValue: string | RocketCondition<string>]
+    resolvedVariables: Record<string, RocketResolvableString>
+  }) => void | Promise<void>
+
+  /**
+   * `fileBuildResolver` and `resolvedFilesBuilder` are mutable, the resolver fn will not be called for files that already has a resolved value.
+   */
+  onFileBuildResolver: (props: {
+    fileBuildResolver: [builderKey: string, builderConfig: RocketConfigFilesBuilderResolver[string]]
+    resolvedFilesBuilder: Record<string, { filePath: string, content: RocketResolvableString }>
+  }) => void | Promise<void>
+
+  /**
+   * `excludeResolver` and `resolvedExcludes` are mutable, the resolver fn will not be called for excludes that already has a resolved value.
+   */
+  onExcludeResolver: (props: {
+    excludeResolver: [excludeName: string, resolverValue: boolean | RocketCondition<true>]
+    resolvedExcludes: Record<string, boolean>
+  }) => void | Promise<void>
+}
+
+export interface ParseRocketConfigOptions {
+  /**
+   * A hookable instance to hook into the rocket config parsing (and related) process.
+   */
+  hookable?: Hookable<ParseRocketConfigHooks>
+}
+export async function parseRocketConfig(configOrPath: RocketConfig | string, options?: ParseRocketConfigOptions) {
+  const {
+    hookable,
+  } = options ?? {}
+
   const config = await loadRocketConfig(configOrPath)
 
   const resolvedParameters: Record<string, string | boolean> = {}
-  for (const parameter of config.parameters ?? [])
-    resolvedParameters[parameter.id] = await resolveParameter(parameter, resolvedParameters)
+  for (const parameter of config.parameters ?? []) {
+    if (hookable)
+      await hookable.callHook('onParameter', { parameter, resolvedParameters })
+
+    resolvedParameters[parameter.id] = resolvedParameters[parameter.id] ?? await resolveParameter(parameter, resolvedParameters)
+  }
 
   const _injectPossibleParameter = (result: string) => typeof resolvedParameters[result] === 'string' ? resolvedParameters[result] : result
 
   const resolvedVariables: Record<string, RocketResolvableString> = {}
-  for (const [variableName, resolverValue] of Object.entries(config.variablesResolver ?? {}))
-    resolvedVariables[variableName] = _injectPossibleParameter(resolveVariable(resolverValue, resolvedParameters))
+  for (const variableResolver of Object.entries(config.variablesResolver ?? {})) {
+    if (hookable)
+      await hookable.callHook('onVariableResolver', { variableResolver, resolvedVariables })
+
+    const [variableName, resolverValue] = variableResolver
+
+    resolvedVariables[variableName] = _injectPossibleParameter(
+      resolvedVariables[variableName] ?? resolveVariable(resolverValue, resolvedParameters),
+    )
+  }
 
   const resolvedFilesBuilder: Record<string, { filePath: string, content: RocketResolvableString }> = {}
-  for (const [builderKey, builderConfig] of Object.entries(config.filesBuildResolver ?? {})) {
-    const resolvedContent = _injectPossibleParameter(resolveVariable(builderConfig.content, resolvedParameters)) // Re-use resolveVariable logic
-    resolvedFilesBuilder[builderKey] = { filePath: builderConfig.filePath, content: resolvedContent }
+  for (const fileBuildResolver of Object.entries(config.filesBuildResolver ?? {})) {
+    if (hookable)
+      await hookable.callHook('onFileBuildResolver', { fileBuildResolver, resolvedFilesBuilder })
+
+    const [builderKey, builderConfig] = fileBuildResolver
+
+    resolvedFilesBuilder[builderKey] = resolvedFilesBuilder[builderKey] ?? {
+      filePath: builderConfig.filePath,
+      content: resolveVariable(builderConfig.content, resolvedParameters), // Re-use resolveVariable logic
+    }
+    resolvedFilesBuilder[builderKey].content = _injectPossibleParameter(resolvedFilesBuilder[builderKey].content)
   }
 
   const resolvedExcludes: Record<string, boolean> = {}
-  for (const [excludeName, resolverValue] of Object.entries(config.excludesResolver ?? {}))
-    resolvedExcludes[excludeName] = resolveExclude(resolverValue, resolvedParameters)
+  for (const excludeResolver of Object.entries(config.excludesResolver ?? {})) {
+    if (hookable)
+      await hookable.callHook('onExcludeResolver', { excludeResolver, resolvedExcludes })
+
+    const [excludeName, resolverValue] = excludeResolver
+
+    resolvedExcludes[excludeName] = resolvedExcludes[excludeName] ?? resolveExclude(resolverValue, resolvedParameters)
+  }
 
   return { config, resolvedParameters, resolvedVariables, resolvedExcludes, resolvedFilesBuilder }
 }
