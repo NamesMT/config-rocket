@@ -1,6 +1,24 @@
 # Changelog
 
 
+## v0.3.20
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.19...v0.3.20)
+
+### 🚀 Enhancements
+
+- Add `unpackFromUint8` function ([6eaf22e](https://github.com/namesmt/config-rocket/commit/6eaf22e))
+- Add `cwd` arg for CLI ([aa387f6](https://github.com/namesmt/config-rocket/commit/aa387f6))
+- Add `extractRocketConfigFromUint8`, `uint8IsConfigPack`, `uint8IsConfigPackWithParameters` ([fbd7e1d](https://github.com/namesmt/config-rocket/commit/fbd7e1d))
+
+### 💅 Refactors
+
+- Minor structuring ([4a6e878](https://github.com/namesmt/config-rocket/commit/4a6e878))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.3.19
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.18...v0.3.19)
