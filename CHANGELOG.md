@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.3.17
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.16...v0.3.17)
+
+### 🩹 Fixes
+
+- Hook should be called with await ([95f76de](https://github.com/namesmt/config-rocket/commit/95f76de))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.3.16
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.15...v0.3.16)
