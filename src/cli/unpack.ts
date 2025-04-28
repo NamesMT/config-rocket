@@ -46,7 +46,7 @@ export interface UnpackOptions {
   cwd?: string
 }
 
-export async function unpackFromUrl(url: string, options?: UnpackOptions) {
+export async function unpackFromUint8(uint8: Uint8Array, options?: UnpackOptions) {
   const {
     hookable,
     nonAssemblyBehavior = 'prompt',
@@ -54,13 +54,7 @@ export async function unpackFromUrl(url: string, options?: UnpackOptions) {
     cwd = resolve(),
   } = options ?? {}
 
-  logger.info(`Downloading archive from ${url}`)
-
-  const res = await fetch(url)
-  if (!res.ok)
-    throw new Error(`Failed to download archive from ${url}`)
-
-  const configPackBuffer = new Uint8Array(await res.arrayBuffer())
+  const configPackBuffer = uint8
 
   if (sha256) {
     const configPackSha256 = await createSha256(configPackBuffer)
@@ -119,4 +113,14 @@ export async function unpackFromUrl(url: string, options?: UnpackOptions) {
     await rm(tmpDir, { recursive: true })
       .catch(() => { throw new Error('Failed to remove tmpDir') })
   }
+}
+
+export async function unpackFromUrl(url: string, options?: UnpackOptions) {
+  logger.info(`Downloading archive from ${url}`)
+
+  const res = await fetch(url)
+  if (!res.ok)
+    throw new Error(`Failed to download archive from ${url}`)
+
+  return unpackFromUint8(new Uint8Array(await res.arrayBuffer()), options)
 }
