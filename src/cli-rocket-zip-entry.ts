@@ -2,7 +2,7 @@
 
 import { readFile, writeFile } from 'node:fs/promises'
 import { defineCommand, runMain } from 'citty'
-import consola from 'consola'
+import { consola } from 'consola'
 import { zip } from 'fflate'
 import { glob } from 'tinyglobby'
 import { logger } from './helpers/logger'

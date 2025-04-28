@@ -2,7 +2,7 @@ import type { UserInputConfig } from 'c12'
 import { readFile } from 'node:fs/promises'
 import { objectPick } from '@namesmt/utils'
 import { loadConfig } from 'c12'
-import consola from 'consola'
+import { consola } from 'consola'
 import { dirname, resolve } from 'pathe'
 
 export interface RocketConfigParameter {
