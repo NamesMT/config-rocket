@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.3.19
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.18...v0.3.19)
+
+### 🚀 Enhancements
+
+- Add `ParseRocketConfigHooks` ([09ad855](https://github.com/namesmt/config-rocket/commit/09ad855))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.3.18
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.17...v0.3.18)
