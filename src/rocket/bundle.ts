@@ -1,11 +1,12 @@
 import type { Zippable } from 'fflate'
 import type { RocketConfig } from './config'
+import { Buffer } from 'node:buffer'
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
-import { stringifyJSON5 } from 'confbox'
-import { strToU8, zip } from 'fflate'
+import { parseJSON5, stringifyJSON5 } from 'confbox'
+import { strToU8, Unzip, UnzipInflate, zip } from 'fflate'
 import { dirname, join, relative, resolve } from 'pathe'
 import { logger } from '~/helpers/logger'
-import { loadRocketConfig } from './config'
+import { assertsRocketConfig, loadRocketConfig } from './config'
 
 export async function extractReferencedFuels(rocketConfig: RocketConfig): Promise<string[]> {
   // Using a regexp string match for now, I'll see the feedbacks if we need to actually traverse the JSON tree.
@@ -161,4 +162,62 @@ async function addDirectoryToZip(
       zipData[zipPath] = content // fflate accepts Buffer directly
     }
   }
+}
+
+/**
+ * This function do a fast extraction of the rocket config from the given uint8 using selective streaming unzip.
+ */
+export async function extractRocketConfigFromUint8(uint8: Uint8Array): Promise<RocketConfig> {
+  return new Promise((resolve, reject) => {
+    const configData: Uint8Array[] = []
+    let configFound = false
+
+    const unzipper = new Unzip((file) => {
+      if (file.name === 'rocket.config.json5') {
+        configFound = true
+        file.ondata = (err, data, final) => {
+          if (err)
+            return reject(new Error('Error during unzip stream'))
+
+          configData.push(data)
+
+          if (final) {
+            try {
+              const configString = Buffer.concat(configData).toString('utf-8')
+              const config = parseJSON5<any>(configString)
+              assertsRocketConfig(config)
+              resolve(config)
+            }
+            catch {
+              reject(new Error('Invalid rocket config'))
+            }
+          }
+        }
+
+        file.start()
+      }
+    })
+
+    unzipper.register(UnzipInflate)
+    unzipper.push(uint8, true)
+
+    // Set a timeout to handle cases where the file might not be found
+    setTimeout(() => {
+      if (!configFound) {
+        reject(new Error('No rocket config found in the archive'))
+      }
+    }, 300)
+  })
+}
+
+export async function uint8IsConfigPack(uint8: Uint8Array): Promise<boolean> {
+  return await extractRocketConfigFromUint8(uint8)
+    .then(() => true)
+    .catch(() => false)
+}
+
+export async function uint8IsConfigPackWithParameters(uint8: Uint8Array): Promise<boolean> {
+  return await extractRocketConfigFromUint8(uint8)
+    .then(config => Boolean(config.parameters?.length))
+    .catch(() => false)
 }
