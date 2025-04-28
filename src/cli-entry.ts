@@ -36,6 +36,10 @@ const main = defineCommand({
       type: 'string',
       description: `If specified, will verify the downloaded archive's sha256 hash (base64url)`,
     },
+    cwd: {
+      type: 'string',
+      description: 'The working directory for the process',
+    },
   },
   async run({ args }) {
     const {
@@ -44,6 +48,7 @@ const main = defineCommand({
       pack,
       nonAssemblyBehavior,
       sha256,
+      cwd,
     } = args
 
     if (!url && !repo)
@@ -53,6 +58,7 @@ const main = defineCommand({
       return await unpackFromUrl(url, {
         nonAssemblyBehavior,
         sha256,
+        cwd,
       })
     }
 
@@ -76,6 +82,7 @@ const main = defineCommand({
     return await unpackFromUrl(selectedAsset.browser_download_url, {
       nonAssemblyBehavior,
       sha256,
+      cwd,
     })
   },
 })
