@@ -1,6 +1,26 @@
 # Changelog
 
 
+## v0.3.18
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.17...v0.3.18)
+
+### 💅 Refactors
+
+- ⚠️  Use async await pattern instead (read desc) ([a8f135f](https://github.com/namesmt/config-rocket/commit/a8f135f))
+
+### 🏡 Chore
+
+- Use consistent import pattern ([196a3a5](https://github.com/namesmt/config-rocket/commit/196a3a5))
+
+#### ⚠️ Breaking Changes
+
+- ⚠️  Use async await pattern instead (read desc) ([a8f135f](https://github.com/namesmt/config-rocket/commit/a8f135f))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.3.17
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.16...v0.3.17)
