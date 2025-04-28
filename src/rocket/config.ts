@@ -258,55 +258,6 @@ export async function parseRocketConfig(configOrPath: RocketConfig | string, opt
   return { config, resolvedParameters, resolvedVariables, resolvedExcludes, resolvedFilesBuilder }
 }
 
-/**
- * Parses a simple Record `variables` and replace `FuelReference`s with its content.
- *
- * Does not mutate the original object
- */
-export async function supplyFuel(variables: Record<string, string>, fuelDir: string): Promise<Record<string, string>> {
-  return await supplyFuelAsInstructed(variables, fuelDir, async ({ subject, resolveFuelContent }) => {
-    const fueledVariables: Record<string, string> = {}
-    for (const key in subject) {
-      if (subject[key].startsWith('fuel:')) {
-        const referencedFuelName = subject[key].slice(5)
-        const fuelContent = await resolveFuelContent(referencedFuelName)
-        fueledVariables[key] = fuelContent
-      }
-    }
-
-    return { ...subject, ...fueledVariables }
-  })
-}
-
-/**
- * Parses a `resolvedFilesBuilder` and replace `FuelReference`s with its content.
- *
- * Does not mutate the original object
- */
-export async function supplyFuelToResolvedFilesBuilder(resolvedFilesBuilder: Record<string, { filePath: string, content: RocketResolvableString }>, fuelDir: string) {
-  return await supplyFuelAsInstructed(resolvedFilesBuilder, fuelDir, async ({ subject, resolveFuelContent }) => {
-    const fueledFilesBuilder: Record<string, { filePath: string, content: string }> = {}
-    for (const [key, value] of Object.entries(subject)) {
-      if (typeof value.content.startsWith('fuel:')) {
-        const referencedFuelName = value.content.slice(5)
-        const fuelContent = await resolveFuelContent(referencedFuelName)
-        fueledFilesBuilder[key] = { filePath: value.filePath, content: fuelContent }
-      }
-    }
-
-    return { ...subject, ...fueledFilesBuilder }
-  })
-}
-
-export async function supplyFuelAsInstructed<S>(
-  subject: S,
-  fuelDir: string,
-  supplyFn: (args: { subject: S, resolveFuelContent: (fuelName: string) => Promise<string> }) => Promise<S>,
-): Promise<S> {
-  const resolveFuelContent = (fuelName: string) => readFile(resolve(fuelDir, fuelName), 'utf8')
-  return await supplyFn({ subject, resolveFuelContent })
-}
-
 export function assertsRocketConfig(config: UserInputConfig | RocketConfig): asserts config is RocketConfig {
   // Validate parameters array
   if (config.parameters) {
@@ -522,4 +473,53 @@ export function assertsRocketCondition(condition: RocketCondition): asserts cond
 
   if (typeof condition.result !== 'string' && typeof condition.result !== 'boolean')
     throw new Error(`Invalid parameter resolver condition result`)
+}
+
+/**
+ * Parses a simple Record `variables` and replace `FuelReference`s with its content.
+ *
+ * Does not mutate the original object
+ */
+export async function supplyFuel(variables: Record<string, string>, fuelDir: string): Promise<Record<string, string>> {
+  return await supplyFuelAsInstructed(variables, fuelDir, async ({ subject, resolveFuelContent }) => {
+    const fueledVariables: Record<string, string> = {}
+    for (const key in subject) {
+      if (subject[key].startsWith('fuel:')) {
+        const referencedFuelName = subject[key].slice(5)
+        const fuelContent = await resolveFuelContent(referencedFuelName)
+        fueledVariables[key] = fuelContent
+      }
+    }
+
+    return { ...subject, ...fueledVariables }
+  })
+}
+
+/**
+ * Parses a `resolvedFilesBuilder` and replace `FuelReference`s with its content.
+ *
+ * Does not mutate the original object
+ */
+export async function supplyFuelToResolvedFilesBuilder(resolvedFilesBuilder: Record<string, { filePath: string, content: RocketResolvableString }>, fuelDir: string) {
+  return await supplyFuelAsInstructed(resolvedFilesBuilder, fuelDir, async ({ subject, resolveFuelContent }) => {
+    const fueledFilesBuilder: Record<string, { filePath: string, content: string }> = {}
+    for (const [key, value] of Object.entries(subject)) {
+      if (typeof value.content.startsWith('fuel:')) {
+        const referencedFuelName = value.content.slice(5)
+        const fuelContent = await resolveFuelContent(referencedFuelName)
+        fueledFilesBuilder[key] = { filePath: value.filePath, content: fuelContent }
+      }
+    }
+
+    return { ...subject, ...fueledFilesBuilder }
+  })
+}
+
+export async function supplyFuelAsInstructed<S>(
+  subject: S,
+  fuelDir: string,
+  supplyFn: (args: { subject: S, resolveFuelContent: (fuelName: string) => Promise<string> }) => Promise<S>,
+): Promise<S> {
+  const resolveFuelContent = (fuelName: string) => readFile(resolve(fuelDir, fuelName), 'utf8')
+  return await supplyFn({ subject, resolveFuelContent })
 }
