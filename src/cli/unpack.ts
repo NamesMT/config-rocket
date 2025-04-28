@@ -1,9 +1,10 @@
-import type { FlateError, Unzipped } from 'fflate'
+import type { Unzipped } from 'fflate'
 import type { Hookable, Hooks } from 'hookable'
 import type { FileOutputHooks } from '~/helpers/fs'
 import type { RocketAssembleHooks } from '~/rocket/assemble'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
+import { promisify } from 'node:util'
 import { consola } from 'consola'
 import { strFromU8, unzip } from 'fflate'
 import { join, resolve } from 'pathe'
@@ -12,9 +13,10 @@ import { fileOutput } from '~/helpers/fs'
 import { logger } from '~/helpers/logger'
 import { rocketAssemble } from '~/rocket/assemble'
 
+const unzipAsync = promisify(unzip)
+
 export interface RocketUnpackHooks extends Hooks {
-  onExtract: (args: {
-    err: FlateError | null
+  onExtract: (props: {
     unzipped: Unzipped
   }) => void | Promise<void>
 }
@@ -69,42 +71,36 @@ export async function unpackFromUrl(url: string, options?: UnpackOptions) {
   let isRocketAssembly = true
   let nonAssemblyContinue = typeof nonAssemblyBehavior === 'boolean' ? nonAssemblyBehavior : null
   const tmpDir = await mkdtemp(join(tmpdir(), 'config-rocket-'))
-  // If for some reason we don't have permission to write to os temp dir, fallback to cwd
+    // If for some reason we don't have permission to write to os temp dir, fallback to cwd
     .catch(() => mkdtemp(join(cwd, '.tmp-config-rocket-')))
   try {
-    await new Promise<void>((resolvePromise, rejectPromise) => {
-      unzip(configPackBuffer, async (err, unzipped) => {
-        if (err)
-          return rejectPromise(new Error('Failed to extract the archive.'))
+    const unzipped = await unzipAsync(configPackBuffer)
+      .catch(() => { throw new Error('Failed to extract the archive.') })
 
-        if (hookable)
-          await hookable.callHook('onExtract', { err, unzipped })
+    if (hookable)
+      await hookable.callHook('onExtract', { unzipped })
 
-        if (!unzipped['rocket.config.json5']) {
-          isRocketAssembly = false
+    if (!unzipped['rocket.config.json5']) {
+      isRocketAssembly = false
 
-          if (typeof nonAssemblyContinue !== 'boolean' && nonAssemblyBehavior === 'prompt') {
-            nonAssemblyContinue = await consola.prompt(
-              'Archive is not a valid rocket config pack, do you want to continue extract anyway?',
-              { type: 'confirm', cancel: 'null' },
-            )
-          }
+      if (typeof nonAssemblyContinue !== 'boolean' && nonAssemblyBehavior === 'prompt') {
+        nonAssemblyContinue = await consola.prompt(
+          'Archive is not a valid rocket config pack, do you want to continue extract anyway?',
+          { type: 'confirm', cancel: 'null' },
+        )
+      }
 
-          if (!nonAssemblyContinue)
-            return rejectPromise(new Error('Invalid config pack: "rocket.config.json5" not found.'))
-        }
+      if (!nonAssemblyContinue)
+        throw new Error('Invalid config pack: "rocket.config.json5" not found.')
+    }
 
-        for (const [key, value] of Object.entries(unzipped)) {
-          await fileOutput(
-            isRocketAssembly ? join(tmpDir, key) : join(cwd, key),
-            strFromU8(value),
-            { hookable },
-          )
-        }
-
-        resolvePromise()
-      })
-    })
+    for (const [key, value] of Object.entries(unzipped)) {
+      await fileOutput(
+        isRocketAssembly ? join(tmpDir, key) : join(cwd, key),
+        strFromU8(value),
+        { hookable },
+      )
+    }
     logger.success('Extracted successfully.')
 
     if (isRocketAssembly) {

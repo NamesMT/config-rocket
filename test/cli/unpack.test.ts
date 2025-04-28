@@ -1,8 +1,9 @@
 import type { FlateError } from 'fflate'
 import type { Mock } from 'vitest'
 import { rm } from 'node:fs/promises'
-import consola from 'consola'
+import { consola } from 'consola'
 import { strToU8, zip } from 'fflate'
+import { resolve } from 'pathe'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { unpackFromUrl } from '~/cli/unpack'
 import { createSha256 } from '~/helpers/crypto'
@@ -34,6 +35,9 @@ vi.mock('~/helpers/logger', () => ({
 }))
 vi.mock('consola', () => ({
   default: {
+    prompt: vi.fn(),
+  },
+  consola: {
     prompt: vi.fn(),
   },
 }))
@@ -117,7 +121,7 @@ describe('unpackFromUrl', () => {
     expect(rocketAssemble).toHaveBeenCalledWith({
       frameDir: `${expectedTmpDir}/frame`,
       fuelDir: `${expectedTmpDir}/fuel`,
-      outDir: '.',
+      outDir: resolve(),
       hookable: undefined,
     })
     expect(logger.success).toHaveBeenCalledWith('Assembled successfully, enjoy your new configs!')
@@ -192,8 +196,8 @@ describe('unpackFromUrl', () => {
     expect(logger.start).toHaveBeenCalledWith('Extracting archive...')
     expect(mockUnzip).toHaveBeenCalled()
     expect(fileOutput).toHaveBeenCalledTimes(2)
-    expect(fileOutput).toHaveBeenCalledWith('some_file.txt', 'some content', { hookable: undefined })
-    expect(fileOutput).toHaveBeenCalledWith('another_dir/data.json', '{"key": "value"}', { hookable: undefined })
+    expect(fileOutput).toHaveBeenCalledWith(resolve('some_file.txt'), 'some content', { hookable: undefined })
+    expect(fileOutput).toHaveBeenCalledWith(resolve('another_dir/data.json'), '{"key": "value"}', { hookable: undefined })
     expect(logger.success).toHaveBeenCalledWith('Extracted successfully.')
     expect(rocketAssemble).not.toHaveBeenCalled()
     expect(rm).toHaveBeenCalled()
@@ -249,7 +253,7 @@ describe('unpackFromUrl', () => {
       { type: 'confirm', cancel: 'null' },
     )
     expect(fileOutput).toHaveBeenCalledTimes(1)
-    expect(fileOutput).toHaveBeenCalledWith('some_file.txt', 'content', { hookable: undefined })
+    expect(fileOutput).toHaveBeenCalledWith(resolve('some_file.txt'), 'content', { hookable: undefined })
     expect(logger.success).toHaveBeenCalledWith('Extracted successfully.')
     expect(rocketAssemble).not.toHaveBeenCalled()
     expect(rm).toHaveBeenCalled()
