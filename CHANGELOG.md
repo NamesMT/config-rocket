@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.3.16
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.15...v0.3.16)
+
+### 🩹 Fixes
+
+- **cli:** Missing ref, should also exports used rocket utilities ([e5e5608](https://github.com/namesmt/config-rocket/commit/e5e5608))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.3.15
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.14...v0.3.15)
