@@ -44,7 +44,19 @@ const main = defineCommand({
   subCommands: {
     zip: () => import('~/cli/commands/zip').then(r => r.default),
   },
-  async run({ args }) {
+  setup(context) {
+    // Creates data context for main comand
+    context.data ??= {}
+
+    // Sets `skipMain` flag for standalone sub commands
+    const standaloneSubCommands = new Set(['zip'])
+    if (context.args._[0] && standaloneSubCommands.has(context.args._[0]))
+      context.data.skipMain = true
+  },
+  async run({ args, data }) {
+    if (data.skipMain)
+      return
+
     const {
       url,
       repo,

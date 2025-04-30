@@ -1,4 +1,3 @@
-import { exit } from 'node:process'
 import { defineCommand } from 'citty'
 import { consola } from 'consola'
 import { glob } from 'tinyglobby'
@@ -60,8 +59,5 @@ export default defineCommand({
     logger.start('Zipping files...')
     await readAndZipFiles(filesList, output)
     logger.success(`Zipped successfully: ${output}`)
-
-    // Exit with code 0 to indicate last command in chain, without this the parent command will invoke and error.
-    exit(0)
   },
 })
