@@ -1,5 +1,6 @@
 export * from '~/cli/gh-repo'
 export * from '~/cli/unpack'
+export * from '~/helpers/binary'
 export * from '~/helpers/crypto'
 export * from '~/helpers/fs'
 export * from '~/helpers/logger'

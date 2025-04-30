@@ -41,6 +41,9 @@ const main = defineCommand({
       description: 'The working directory for the process',
     },
   },
+  subCommands: {
+    zip: () => import('~/cli/commands/zip').then(r => r.default),
+  },
   async run({ args }) {
     const {
       url,
