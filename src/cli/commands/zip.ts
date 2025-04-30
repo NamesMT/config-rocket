@@ -1,7 +1,8 @@
+import { writeFile } from 'node:fs/promises'
 import { defineCommand } from 'citty'
 import { consola } from 'consola'
 import { glob } from 'tinyglobby'
-import { readAndZipFiles } from '~/cli'
+import { createSha256, readAndZipFiles } from '~/cli'
 import { logger } from '~/helpers/logger'
 
 export default defineCommand({
@@ -57,7 +58,9 @@ export default defineCommand({
       return logger.warn('User aborted zipping.')
 
     logger.start('Zipping files...')
-    await readAndZipFiles(filesList, output)
-    logger.success(`Zipped successfully: ${output}`)
+    const uint8 = await readAndZipFiles(filesList)
+    await writeFile(output, uint8)
+    const sha256 = await createSha256(uint8)
+    logger.success(`Zipped successfully: ${output}, sha256: ${sha256}`)
   },
 })
