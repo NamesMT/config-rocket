@@ -1,7 +1,7 @@
 import type { AsyncZipOptions, AsyncZippable, Zippable } from 'fflate'
 import type { RocketConfig } from '~/rocket/config'
 import { Buffer } from 'node:buffer'
-import { readdir, readFile, writeFile } from 'node:fs/promises'
+import { readdir, readFile } from 'node:fs/promises'
 import { parseJSON5 } from 'confbox'
 import { Unzip, UnzipInflate, zip } from 'fflate'
 import { join, relative } from 'pathe'
@@ -17,7 +17,7 @@ async function zipAsync(data: AsyncZippable, options?: AsyncZipOptions): Promise
   })
 }
 
-export async function readAndZipFiles(filesList: string[], outputPath = 'rocket-archive.zip') {
+export async function readAndZipFiles(filesList: string[]) {
   // Note: will see if we should use streaming API or not, for now, we specifically targets `config-rocket` users which should be small files and streaming is not yet necessary.
   const filesListWithData: Record<string, Uint8Array> = {}
   // Note: using this approach to read all files at once.
@@ -26,8 +26,7 @@ export async function readAndZipFiles(filesList: string[], outputPath = 'rocket-
     filesListWithData[filePath] = fileContent
   }))
 
-  await zipAsync(filesListWithData, { consume: true })
-    .then(data => writeFile(outputPath, data))
+  return await zipAsync(filesListWithData, { consume: true })
 }
 
 export async function addDirectoryToZip(
