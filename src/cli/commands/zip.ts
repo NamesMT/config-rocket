@@ -31,12 +31,18 @@ export default defineCommand({
       valueHint: 'rocket-archive.zip',
       default: 'rocket-archive.zip',
     },
+    force: {
+      alias: ['f'],
+      type: 'boolean',
+      description: 'Run the command without prompting',
+    },
   },
   async run({ args }) {
     const {
       include,
       exclude,
       output,
+      force,
     } = args
 
     // Note: `citty` supports any args to might be an array if multiple are passed but currently `citty` types does not have info about it, so we're using the following to always cast it to array anyway.
@@ -49,10 +55,12 @@ export default defineCommand({
     if (!filesList.length)
       throw new Error('No files found to zip.')
 
-    const confirmed = await consola.prompt(
-      `Found ${filesList.length} files, do you want to zip them?: ${filesList.join(', ')}`,
-      { type: 'confirm', cancel: 'null' },
-    )
+    const confirmed = force
+      ? true
+      : await consola.prompt(
+        `Found ${filesList.length} files, do you want to zip them?: ${filesList.join(', ')}`,
+        { type: 'confirm', cancel: 'null' },
+      )
 
     if (!confirmed)
       return logger.warn('User aborted zipping.')
