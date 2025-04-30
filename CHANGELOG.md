@@ -1,6 +1,30 @@
 # Changelog
 
 
+## v0.4.0
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.20...v0.4.0)
+
+### 📖 Documentation
+
+- **README:** Update ([52601e8](https://github.com/namesmt/config-rocket/commit/52601e8))
+- **README:** Update ([70224e4](https://github.com/namesmt/config-rocket/commit/70224e4))
+
+### 🏡 Chore
+
+- Minor ([e78fc4f](https://github.com/namesmt/config-rocket/commit/e78fc4f))
+- Rely on auto inference instead ([657b2b6](https://github.com/namesmt/config-rocket/commit/657b2b6))
+- **rocket-zip:** No files found should throw instead of return ([18e31ae](https://github.com/namesmt/config-rocket/commit/18e31ae))
+- ⚠️  Big refactoring, now uses `subCommands` instead of multiple entry binaries ([b795446](https://github.com/namesmt/config-rocket/commit/b795446))
+
+#### ⚠️ Breaking Changes
+
+- ⚠️  Big refactoring, now uses `subCommands` instead of multiple entry binaries ([b795446](https://github.com/namesmt/config-rocket/commit/b795446))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.3.20
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.19...v0.3.20)
