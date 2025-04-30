@@ -1,6 +1,30 @@
 # Changelog
 
 
+## v0.4.2
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.4.1...v0.4.2)
+
+### 🚀 Enhancements
+
+- Add `assertsBinarySha256` helper ([0d60ffa](https://github.com/namesmt/config-rocket/commit/0d60ffa))
+- **zip:** Add `force` arg ([5485928](https://github.com/namesmt/config-rocket/commit/5485928))
+- Add `hash` sub command ([fa7660a](https://github.com/namesmt/config-rocket/commit/fa7660a))
+
+### 🏡 Chore
+
+- Exports `cli/commands` ([9ec008c](https://github.com/namesmt/config-rocket/commit/9ec008c))
+- ⚠️  Simplify `readAndZipFiles` ([dd86cd6](https://github.com/namesmt/config-rocket/commit/dd86cd6))
+- Adjust to match new `readAndZipFiles`, adds `sha256` print ([9e5c3da](https://github.com/namesmt/config-rocket/commit/9e5c3da))
+
+#### ⚠️ Breaking Changes
+
+- ⚠️  Simplify `readAndZipFiles` ([dd86cd6](https://github.com/namesmt/config-rocket/commit/dd86cd6))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.4.1
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.4.0...v0.4.1)
