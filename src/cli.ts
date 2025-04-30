@@ -1,3 +1,4 @@
+export * from '~/cli/commands'
 export * from '~/cli/gh-repo'
 export * from '~/cli/unpack'
 export * from '~/helpers/binary'
