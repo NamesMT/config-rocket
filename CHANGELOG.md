@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.4.1
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.4.0...v0.4.1)
+
+### 🩹 Fixes
+
+- Use different method to skip parent command ([fc9e5c6](https://github.com/namesmt/config-rocket/commit/fc9e5c6))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.4.0
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.3.20...v0.4.0)
