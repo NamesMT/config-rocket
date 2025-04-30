@@ -52,11 +52,10 @@
 ### For users
 
 ```sh
-# On any platform: `Mac / Linux / Windows`, run a command:
 npx config-rocket --repo="NamesMT/config-packs"
 # Or by url: `npx config-rocket --url=https://direct.url/to-config.zip`
 
-# Interactively customize the rocket launch if config pack have parameters
+# Interactively configure the installation parameters (if any)
 # Nothing more, enjoy :)
 ```
 
