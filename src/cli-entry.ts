@@ -43,13 +43,14 @@ const main = defineCommand({
   },
   subCommands: {
     zip: () => import('~/cli/commands/zip').then(r => r.default),
+    hash: () => import('~/cli/commands/hash').then(r => r.default),
   },
   setup(context) {
     // Creates data context for main comand
     context.data ??= {}
 
     // Sets `skipMain` flag for standalone sub commands
-    const standaloneSubCommands = new Set(['zip'])
+    const standaloneSubCommands = new Set(['zip', 'hash'])
     if (context.args._[0] && standaloneSubCommands.has(context.args._[0]))
       context.data.skipMain = true
   },
