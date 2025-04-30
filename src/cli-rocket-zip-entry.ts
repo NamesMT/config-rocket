@@ -62,7 +62,7 @@ const main = defineCommand({
     const filesList = await glob(includesArr, { ignore: excludesArr })
 
     if (!filesList.length)
-      return logger.error('No files found to zip.')
+      throw new Error('No files found to zip.')
 
     const confirmed = await consola.prompt(
       `Found ${filesList.length} files, do you want to zip them?: ${filesList.join(', ')}`,
