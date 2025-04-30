@@ -335,7 +335,7 @@ describe('unpackFromUrl', () => {
     // Act & Assert
     await expect(unpackFromUrl(mockUrl, { sha256: incorrectSha256 }))
       .rejects
-      .toThrow(`The downloaded archive's sha256 is invalid, expected: ${incorrectSha256}, got: ${actualSha256}`)
+      .toThrow(`The binary's sha256 is invalid, expected: ${incorrectSha256}, got: ${actualSha256}`)
 
     expect(mockFetch).toHaveBeenCalledWith(mockUrl)
     expect(logger.info).toHaveBeenCalledWith(`Downloading archive from ${mockUrl}`)
