@@ -32,7 +32,7 @@ export interface FileOutputOptions {
    * Control existing file content merging policy.
    *
    * Options:
-   * + `json`: perform deep merge for json files only.
+   * + `'json'`: perform deep merge for json files only.
    * + `true`: concatenate data of all files (json are still deep-merged).
    *
    */

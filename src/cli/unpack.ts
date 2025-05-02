@@ -30,9 +30,9 @@ export interface UnpackOptions {
 
   /**
    * Control the behavior when the downloaded archive is not a rocket config pack.
-   * `true`: Continue extract anyway.
-   * `false`: Will abort the process.
-   * `prompt`: The user will be prompted to continue or abort.
+   * + `true`: Continue extract anyway.
+   * + `false`: Will abort the process.
+   * + `'prompt'`: The user will be prompted to continue or abort.
    *
    * @default 'prompt'
    */
