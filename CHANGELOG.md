@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.4.4
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.4.3...v0.4.4)
+
+### 🏡 Chore
+
+- Bundle `c12`, `confbox` for now (CJS) ([3e5e38c](https://github.com/namesmt/config-rocket/commit/3e5e38c))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.4.3
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.4.2...v0.4.3)
