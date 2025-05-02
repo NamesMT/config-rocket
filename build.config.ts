@@ -4,7 +4,6 @@ import sharedConfig from './shared.config'
 export default defineBuildConfig({
   declaration: 'node16',
   clean: true,
-  externals: ['jiti'],
   rollup: {
     inlineDependencies: true,
     esbuild: {
