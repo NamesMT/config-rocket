@@ -79,7 +79,7 @@ export interface RocketConfig {
    *       }
    *     },
    *     {
-   *       id: 'example-nested-condition',
+   *       id: 'example-reference-condition',
    *       resolver: {
    *         operation: 'condition',
    *         condition: {
