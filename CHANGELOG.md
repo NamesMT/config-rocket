@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.4.5
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.4.4...v0.4.5)
+
+### 🏡 Chore
+
+- Lockfile, externals `jiti` ([b716f7c](https://github.com/namesmt/config-rocket/commit/b716f7c))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.4.4
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.4.3...v0.4.4)
