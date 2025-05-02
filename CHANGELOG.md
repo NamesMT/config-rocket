@@ -1,6 +1,23 @@
 # Changelog
 
 
+## v0.4.6
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.4.5...v0.4.6)
+
+### 🩹 Fixes
+
+- `jiti` not found ([ea1e60b](https://github.com/namesmt/config-rocket/commit/ea1e60b))
+
+### 🌊 Types
+
+- **RocketConfig:** Correct wording in example ([8f80123](https://github.com/namesmt/config-rocket/commit/8f80123))
+- Correct formattings ([ae2fff7](https://github.com/namesmt/config-rocket/commit/ae2fff7))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.4.5
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.4.4...v0.4.5)
