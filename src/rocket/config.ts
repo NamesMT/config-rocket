@@ -254,7 +254,7 @@ export async function parseRocketConfig(configOrPath: RocketConfig | string, opt
     resolvedParameters[parameter.id] = resolvedParameters[parameter.id] ?? await resolveParameter(parameter, resolvedParameters)
   }
 
-  const _injectPossibleParameter = (result: string) => typeof resolvedParameters[result] === 'string' ? resolvedParameters[result] : result
+  const _injectPossibleParameter = (result: string) => result in resolvedParameters ? String(resolvedParameters[result]) : result
 
   const resolvedVariables: Record<string, RocketResolvableString> = {}
   for (const variableResolver of Object.entries(config.variablesResolver ?? {})) {
