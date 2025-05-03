@@ -46,7 +46,6 @@ export default defineCommand({
     hasher.update(fileBuffer)
     const output = hasher.digest(outputFormat as BinaryToTextEncoding)
 
-    logger.success('Hashed successfully, capture next line:')
-    console.log(output)
+    logger.success(`Hashed: "${output}"`)
   },
 })
