@@ -1,7 +1,7 @@
 import type { UserInputConfig } from 'c12'
 import type { Hookable, Hooks } from 'hookable'
 import { readFile } from 'node:fs/promises'
-import { objectPick } from '@namesmt/utils'
+import { objectPick, replaceMap } from '@namesmt/utils'
 import { loadConfig } from 'c12'
 import { consola } from 'consola'
 import { dirname, resolve } from 'pathe'
@@ -11,7 +11,7 @@ export interface RocketConfigParameter {
   resolver: RocketConfigParameterResolver
 }
 
-export type RocketConfigParameterResolver = RocketConfigParameterResolverOperationPrompt | RocketConfigParameterResolverOperationCondition
+export type RocketConfigParameterResolver = RocketConfigParameterResolverOperationPrompt | RocketConfigParameterResolverOperationResolvable
 
 export type RocketConfigParameterResolverOperationPrompt = {
   operation: 'prompt'
@@ -26,19 +26,39 @@ export type RocketConfigParameterResolverOperationPrompt = {
     }
   )
 
-export interface RocketConfigParameterResolverOperationCondition {
-  operation: 'condition'
-  condition: RocketCondition
+export interface RocketConfigParameterResolverOperationResolvable {
+  operation: 'resolvable'
+  resolvable: RocketResolvable
 }
 
-export interface RocketCondition<AllowedResult = string | true> {
-  type: RocketConditionType
-  subject: RocketCondition | RocketConfigParameter['id'] // Parameter id or nested condition
-  condition: RocketCondition | string | boolean // Nested condition or statement
-  result?: AllowedResult
-}
+export type RocketResolvable<AllowedResult = string | true> = {
+  type: RocketResolvableType
+  a: RocketResolvable<any> | RocketConfigParameter['id'] // Parameter id or nested resolvable
+  b: RocketResolvable<any> | string | boolean // Nested resolvable or statement
+} & (
+    {
+      type: Exclude<RocketResolvableType, 'format' | '$or'>
+      result?: AllowedResult
+    } | {
+      type: Extract<RocketResolvableType, '$or'>
+      result?: never
+    }
+    | (AllowedResult extends string ? {
+      type: Extract<RocketResolvableType, 'format'>
+      result: string
+    } : never)
+  )
 
-export type RocketConditionType = 'match' | 'contain' | 'not'
+/**
+ * Possible resolvable types.
+ *
+ * + `'match'`: `a` and `b` must match exactly.
+ * + `'contain'`: `a` must contains `b`.
+ * + `'not'`: `a` must not match `b`.
+ * + `'format'`: use `a` and `b` to create a formatted string using `result` as a template string.
+ * + `'$or'`: => `a || b`, returns the value of the input `a` | `b`.
+ */
+export type RocketResolvableType = 'match' | 'contain' | 'not' | 'format' | '$or'
 
 /**
  * A fuel reference is a path to a fuel file, e.g: `fuel:instruct_very-nice-rocket.md`.
@@ -47,11 +67,11 @@ export type FuelReference = `fuel:${string}`
 
 export type RocketResolvableString = string | RocketConfigParameter['id'] | FuelReference
 
-export interface RocketConfigVariablesResolver { [key: string]: RocketResolvableString | RocketCondition<RocketResolvableString> }
+export interface RocketConfigVariablesResolver { [key: string]: RocketResolvableString | RocketResolvable<RocketResolvableString> }
 
-export interface RocketConfigExcludesResolver { [filePath: string]: RocketCondition<true> }
+export interface RocketConfigExcludesResolver { [filePath: string]: RocketResolvable<true> }
 
-export interface RocketConfigFilesBuilderResolver { [key: string]: { filePath: string, content: RocketResolvableString | RocketCondition<RocketResolvableString> } }
+export interface RocketConfigFilesBuilderResolver { [key: string]: { filePath: string, content: RocketResolvableString | RocketResolvable<RocketResolvableString> } }
 
 export interface RocketConfig {
   /**
@@ -79,14 +99,31 @@ export interface RocketConfig {
    *       }
    *     },
    *     {
-   *       id: 'example-reference-condition',
+   *       id: 'example-reference-resolvable',
    *       resolver: {
-   *         operation: 'condition',
-   *         condition: {
-   *           subject: '$input-BRAVE_API_KEY',
+   *         operation: 'resolvable',
+   *         resolvable: {
    *           type: 'match',
-   *           condition: 'SHOULD MATCH THIS',
+   *           a: '$input-BRAVE_API_KEY',
+   *           b: 'SHOULD MATCH THIS',
    *           result: 'ABCDE',
+   *         },
+   *       }
+   *     },
+   *     {
+   *       id: 'example-nested-resolvable',
+   *       resolver: {
+   *         operation: 'resolvable',
+   *         resolvable: {
+   *           type: '$or',
+   *           a: {
+   *             type: 'match',
+   *             a: '$input-BRAVE_API_KEY',
+   *             b: 'SHOULD MATCH THIS',
+   *             result: 'ABCDE',
+   *           },
+   *           b: 'Else case value',
+   *         },
    *       }
    *     }
    *   ]
@@ -106,9 +143,9 @@ export interface RocketConfig {
    *
    *     // If not disabled, load context from `fuel:instruct_memory-bank-load.md`
    *     '{{MEMORY_BANK_LOAD}}': {
-   *       subject: '$confirm-MEMORY_BANK_LOAD-disabled',
    *       type: 'match',
-   *       condition: false,
+   *       a: '$confirm-MEMORY_BANK_LOAD-disabled',
+   *       b: false,
    *       result: 'fuel:instruct_memory-bank-load.md',
    *     }
    *   }
@@ -141,7 +178,7 @@ export interface RocketConfig {
   /**
    * A resolver map to resolve the rocket's file excludes.
    */
-  excludesResolver?: { [filePath: string]: RocketCondition<true> }
+  excludesResolver?: { [filePath: string]: RocketResolvable<true> }
 }
 
 export function defineRocketConfig<RC extends RocketConfig>(config: RC): RC {
@@ -175,7 +212,7 @@ export interface ParseRocketConfigHooks extends Hooks {
    * `variableResolver` and `resolvedVariables` are mutable, the resolver fn will not be called for variables that already has a resolved value.
    */
   onVariableResolver: (props: {
-    variableResolver: [variableName: string, resolverValue: string | RocketCondition<string>]
+    variableResolver: [variableName: string, resolverValue: string | RocketResolvable<string>]
     resolvedVariables: Record<string, RocketResolvableString>
   }) => void | Promise<void>
 
@@ -191,7 +228,7 @@ export interface ParseRocketConfigHooks extends Hooks {
    * `excludeResolver` and `resolvedExcludes` are mutable, the resolver fn will not be called for excludes that already has a resolved value.
    */
   onExcludeResolver: (props: {
-    excludeResolver: [excludeName: string, resolverValue: boolean | RocketCondition<true>]
+    excludeResolver: [excludeName: string, resolverValue: boolean | RocketResolvable<true>]
     resolvedExcludes: Record<string, boolean>
   }) => void | Promise<void>
 }
@@ -280,7 +317,7 @@ export function assertsRocketConfig(config: UserInputConfig | RocketConfig): ass
     assertsRocketExcludesResolver(config.excludesResolver)
 }
 
-async function resolveParameterOperationPrompt(resolver: RocketConfigParameterResolverOperationPrompt): Promise<string | boolean> {
+export async function resolveParameterOperationPrompt(resolver: RocketConfigParameterResolverOperationPrompt): Promise<string | boolean> {
   // Yea the switch case is identical I know, switch case here is necessary for type-safety and avoid `as` casting
   switch (resolver.type) {
     case 'text':
@@ -291,89 +328,128 @@ async function resolveParameterOperationPrompt(resolver: RocketConfigParameterRe
 }
 
 /** Evaluates a simple condition */
-function evaluateCondition(
-  type: RocketConditionType,
-  subjectValue: string | boolean | undefined,
-  statement: string | boolean,
+export function evaluateCondition(
+  type: RocketResolvableType,
+  a: string | boolean | null | undefined,
+  b: string | boolean | null | undefined,
 ): boolean {
   switch (type) {
     case 'match':
-      return subjectValue === statement
+      return a === b
     case 'contain':
-      if (typeof subjectValue !== 'string' || typeof statement !== 'string')
-        throw new Error('"subject" and "statement" must be string under "contain" condition')
-      return subjectValue.includes(statement)
+      if (typeof a !== 'string' || typeof b !== 'string')
+        throw new Error('"a" and "b" must be string under "contain" resolvable')
+      return a.includes(b)
     case 'not':
-      return subjectValue !== statement
+      return a !== b
     default:
-      throw new Error('Unexpected condition type')
+      throw new Error('Unexpected resolvable type')
   }
 }
 
-function resolveParameterOperationCondition(
-  condition: RocketCondition,
+/**
+ * Recursively resolves a resolvable input (parameter ID, nested resolvable, or literal)
+ * to its final value (string or boolean).
+ */
+export function resolveResolvableInput<R extends RocketResolvable>(
+  input: R | RocketConfigParameter['id'] | string | boolean | undefined,
   resolvedParameters: Record<string, string | boolean>,
-): boolean {
-  const subjectValue = typeof condition.subject === 'string'
-    ? resolvedParameters[condition.subject] // Get value of another parameter
-    : resolveParameterOperationCondition(condition.subject, resolvedParameters) // Resolve nested condition
+  resultFallback: InferResolvableResult<R>,
+): string | boolean {
+  if (input === undefined) {
+    throw new Error('Condition input cannot be undefined')
+  }
 
-  const conditionMet = typeof condition.condition === 'object'
-    ? resolveParameterOperationCondition(condition.condition, resolvedParameters) // Resolve nested condition
-    : evaluateCondition(condition.type, subjectValue, condition.condition) // Evaluate simple condition
+  // Handle literal boolean
+  if (typeof input === 'boolean') {
+    return input
+  }
 
-  return conditionMet
+  // Handle literal string or parameter ID
+  if (typeof input === 'string') {
+    const paramValue = resolvedParameters[input]
+    return paramValue !== undefined ? paramValue : input // Return parameter value or literal string
+  }
+
+  // Handle nested RocketResolvable
+  // Note: We pass the *nested* resolvable to resolveRocketResolvable
+  return resolveRocketResolvable(input, resolvedParameters, resultFallback) as InferResolvableResult<R> & {}
 }
 
-async function resolveParameter(
+export type InferResolvableResult<R extends RocketResolvable> = R extends RocketResolvable<infer T> ? T : never
+
+/**
+ * Resolves a RocketResolvable
+ */
+export function resolveRocketResolvable<R extends RocketResolvable>(
+  resolvable: R,
+  resolvedParameters: Record<string, string | boolean>,
+  resultFallback?: InferResolvableResult<R>,
+): InferResolvableResult<R> {
+  // Resolve inputs 'a' and 'b' recursively
+  const valueA = resolveResolvableInput(resolvable.a, resolvedParameters, resultFallback || true)
+  const valueB = resolveResolvableInput(resolvable.b, resolvedParameters, resultFallback || true)
+
+  switch (resolvable.type) {
+    case 'format': {
+      return replaceMap(resolvable.result as string, {
+        '{a}': String(valueA),
+        '{b}': String(valueB),
+      }) as InferResolvableResult<R>
+    }
+    case '$or': {
+      return (valueA || valueB) as InferResolvableResult<R>
+    }
+    default: { // Handles boolean conditions like 'match', 'contain', 'not'
+      const conditionMet = evaluateCondition(resolvable.type, valueA, valueB)
+      // Callers handle the fallback for falsy conditions (e.g., || '', || false)
+      return (conditionMet ? resolvable.result ?? resultFallback : false) as InferResolvableResult<R>
+    }
+  }
+}
+
+export async function resolveParameter(
   parameter: RocketConfigParameter,
   resolvedParameters: Record<string, string | boolean>,
 ): Promise<string | boolean> {
   switch (parameter.resolver.operation) {
     case 'prompt':
       return await resolveParameterOperationPrompt(parameter.resolver)
-    case 'condition': {
-      const condition = parameter.resolver.condition
-      const conditionResult = resolveParameterOperationCondition(condition, resolvedParameters)
-      return conditionResult ? (condition.result ?? true) : false
-    }
+    case 'resolvable':
+      return resolveRocketResolvable(parameter.resolver.resolvable, resolvedParameters, true) || false
   }
 }
 
 /**
- * Resolves a `variable` based on its condition.
- * Assumes the condition structure and result type have been pre-validated.
+ * Resolves a `variable` based on its resolvable.
+ * Assumes the resolvable structure and result type have been pre-validated.
  */
-function resolveVariable(
-  resolverValue: string | RocketCondition<string>,
+export function resolveVariable(
+  resolverValue: string | RocketResolvable<string>,
   resolvedParameters: Record<string, string | boolean>,
 ): string {
   // If the resolver value is already a string, return it directly
   if (typeof resolverValue === 'string')
     return resolverValue
 
-  // If it's a condition object, resolve it
-  const conditionMet = resolveParameterOperationCondition(resolverValue, resolvedParameters)
-
-  return conditionMet ? resolverValue.result! : ''
+  // If it's a resolvable object, resolve it
+  return resolveRocketResolvable(resolverValue, resolvedParameters) || ''
 }
 
 /**
- * Resolves an `exclude` based on its condition.
- * Assumes the condition structure and result type have been pre-validated.
+ * Resolves an `exclude` based on its resolvable.
+ * Assumes the resolvable structure and result type have been pre-validated.
  */
-function resolveExclude(
-  resolverValue: boolean | RocketCondition<true>,
+export function resolveExclude(
+  resolverValue: boolean | RocketResolvable<true>,
   resolvedParameters: Record<string, string | boolean>,
 ): boolean {
   // If the resolver value is already a boolean, return it directly
   if (typeof resolverValue === 'boolean')
     return resolverValue
 
-  // If it's a condition object, resolve it
-  const conditionMet = resolveParameterOperationCondition(resolverValue, resolvedParameters)
-
-  return conditionMet ? resolverValue.result! : false
+  // If it's a resolvable object, resolve it
+  return resolveRocketResolvable(resolverValue, resolvedParameters, true) || false
 }
 
 export function assertsRocketParameter(parameter: RocketConfigParameter): asserts parameter is RocketConfigParameter {
@@ -387,7 +463,7 @@ export function assertsRocketParameter(parameter: RocketConfigParameter): assert
 
 export function assertsRocketParameterResolver(resolver: RocketConfigParameterResolver): asserts resolver is RocketConfigParameterResolver {
   if (
-    !['prompt', 'condition'].includes(resolver?.operation)
+    !['prompt', 'resolvable'].includes(resolver?.operation)
   )
     throw new Error(`Invalid parameter resolver operation: '${resolver.operation}'`)
 
@@ -401,8 +477,8 @@ export function assertsRocketParameterResolver(resolver: RocketConfigParameterRe
       break
     }
 
-    case 'condition': {
-      assertsRocketCondition(resolver.condition)
+    case 'resolvable': {
+      assertsRocketCondition(resolver.resolvable)
 
       break
     }
@@ -414,13 +490,18 @@ export function assertsRocketVariablesResolver(resolver: NonNullable<RocketConfi
     if (typeof key !== 'string')
       throw new Error(`Invalid variable resolver key`)
 
-    // Value must be a string OR a valid RocketCondition object
+    // Value must be a string OR a valid RocketResolvable object
     if (typeof value !== 'string') {
       assertsRocketCondition(value)
 
-      // Also ensure the condition's result is specifically a string
-      if (typeof value.result !== 'string') {
-        throw new TypeError(`Invalid variable resolver for "${key}": 'result' must be of type string, got ${typeof value.result}.`)
+      if (value.type === '$or') {
+        if (value.result)
+          throw new TypeError(`Invalid variable resolver for "${key}": 'result' is not allowed for '$or' type.`)
+      }
+      else {
+        if (typeof value.result !== 'string') {
+          throw new TypeError(`Invalid variable resolver for "${key}": 'result' must be of type string, got ${typeof value.result}.`)
+        }
       }
     }
   }
@@ -435,11 +516,11 @@ export function assertsRocketFilesBuildResolver(resolver: NonNullable<RocketConf
       throw new TypeError(`Invalid filesBuildResolver entry for key "${key}"`)
     }
 
-    // Value must be a string OR a valid RocketCondition object
+    // Value must be a string OR a valid RocketResolvable object
     if (typeof value.content !== 'string') {
       assertsRocketCondition(value.content)
 
-      // Also ensure the condition's result is specifically a string
+      // Also ensure the resolvable's result is specifically a string
       if (typeof value.content.result !== 'string') {
         throw new TypeError(`Invalid filesBuildResolver entry for "${key}": 'result' must be of type string, got ${typeof value.content.result}.`)
       }
@@ -454,25 +535,34 @@ export function assertsRocketExcludesResolver(resolver: NonNullable<RocketConfig
 
     assertsRocketCondition(value)
 
-    // Also ensure the condition's result is specifically `true`
-    if (value.result !== true) {
-      throw new TypeError(`Invalid exclude resolver for "${key}": 'result' must be 'true', got ${value.result}.`)
-    }
+    // Ensure the resolvable type is not 'format' for excludes
+    // Cast to RocketResolvable to bypass stricter type inference within this check
+    if ((value as RocketResolvable).type === 'format')
+      throw new TypeError(`Invalid exclude resolver for "${key}": Condition type 'format' is not allowed here.`)
   }
 }
 
-export function assertsRocketCondition(condition: RocketCondition): asserts condition is RocketCondition {
-  if (!['match', 'contain', 'not'].includes(condition.type))
-    throw new Error(`Invalid parameter resolver condition type: '${condition.type}'`)
+export function assertsRocketCondition(resolvable: RocketResolvable): asserts resolvable is RocketResolvable {
+  if (!['match', 'contain', 'not', 'format', '$or'].includes(resolvable.type))
+    throw new Error(`Invalid parameter resolver resolvable type: '${resolvable.type}'`)
 
-  if (typeof condition.subject !== 'string' && assertsRocketCondition(condition.subject))
-    throw new Error(`Invalid parameter resolver condition subject`)
+  if (resolvable.a === undefined)
+    throw new Error('Invalid RocketResolvable: Missing required property "a" (or deprecated "subject").')
+  if (typeof resolvable.a !== 'string')
+    assertsRocketCondition(resolvable.a) // Recursively validate nested resolvable
 
-  if (typeof condition.condition !== 'string' && typeof condition.condition !== 'boolean' && assertsRocketCondition(condition.condition))
-    throw new Error(`Invalid parameter resolver condition condition`)
+  if (resolvable.b === undefined)
+    throw new Error('Invalid RocketResolvable: Missing required property "b" (or deprecated "condition").')
+  if (typeof resolvable.b !== 'string' && typeof resolvable.b !== 'boolean')
+    assertsRocketCondition(resolvable.b) // Recursively validate nested resolvable
 
-  if (typeof condition.result !== 'string' && typeof condition.result !== 'boolean')
-    throw new Error(`Invalid parameter resolver condition result`)
+  // `format` resolvable requires a string result
+  if (resolvable.type === 'format' && typeof resolvable.result !== 'string')
+    throw new TypeError(`Invalid parameter resolver resolvable type 'format': Expected string "result" property.`)
+
+  // Allow result to be undefined for conditions used purely for boolean logic (e.g., in parameters)
+  if (resolvable.result !== undefined && typeof resolvable.result !== 'string' && typeof resolvable.result !== 'boolean')
+    throw new Error(`Invalid parameter resolver resolvable result: Expected string or boolean, got ${typeof resolvable.result}`)
 }
 
 /**

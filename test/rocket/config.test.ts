@@ -49,50 +49,82 @@ describe('parseRocketConfig', () => {
         {
           id: '$conditionParam',
           resolver: {
-            operation: 'condition',
-            condition: {
-              subject: '$testParamText',
+            operation: 'resolvable',
+            resolvable: {
               type: 'match',
-              condition: 'expectedValue',
+              a: '$testParamText',
+              b: 'expectedValue',
               result: 'conditionMetValue',
             },
           },
+        },
+        {
+          id: '$orParamA',
+          resolver: { operation: 'prompt', type: 'text', label: 'OR Param A' },
+        },
+        {
+          id: '$orParamB',
+          resolver: { operation: 'prompt', type: 'confirm', label: 'OR Param B', initial: false },
         },
       ],
       variablesResolver: {
         '{{VAR_TEXT}}': '$testParamText',
         '{{VAR_COND}}': {
-          subject: '$testParamConfirm',
           type: 'match',
-          condition: true,
+          a: '$testParamConfirm',
+          b: true,
           result: 'fuel:conditional.txt',
         },
         '{{VAR_STATIC}}': 'staticValue',
+        '{{VAR_OR_TRUE}}': {
+          type: '$or',
+          a: { type: 'match', a: '$testParamConfirm', b: true }, // false
+          b: { type: 'match', a: '$orParamA', b: 'or_value', result: 'or_result_when_true' }, // true
+        },
+        '{{VAR_OR_FALSE}}': {
+          type: '$or',
+          a: { type: 'match', a: '$testParamConfirm', b: true }, // false
+          b: { type: 'match', a: '$orParamA', b: 'wrong_value' }, // false
+        },
+        '{{VAR_OR_NESTED}}': {
+          type: '$or',
+          a: { type: 'match', a: '$testParamConfirm', b: true }, // false
+          b: { // Nested $or
+            type: '$or',
+            a: { type: 'match', a: '$orParamB', b: true }, // false
+            b: { type: 'match', a: '$orParamA', b: 'or_value', result: 'outer_or_result_when_true' }, // true
+          },
+        },
       },
       filesBuildResolver: {
         'builder-key': { filePath: 'built.txt', content: 'fuel:builder.txt' },
         'builder-key-cond': {
           filePath: 'built_cond.txt',
           content: {
-            subject: '$testParamConfirm',
             type: 'match',
-            condition: false,
+            a: '$testParamConfirm',
+            b: false,
             result: 'fuel:builder_cond.txt',
           },
         },
       },
       excludesResolver: {
         'exclude_me.txt': {
-          subject: '$testParamText',
           type: 'match',
-          condition: 'exclude',
+          a: '$testParamText',
+          b: 'exclude',
           result: true,
         },
         'keep_me.txt': {
-          subject: '$testParamConfirm',
           type: 'match',
-          condition: true,
+          a: '$testParamConfirm',
+          b: true,
           result: true,
+        },
+        'exclude_or.txt': {
+          type: '$or',
+          a: { type: 'match', a: '$testParamConfirm', b: true }, // false
+          b: { type: 'match', a: '$orParamB', b: true }, // false
         },
       },
     }
@@ -109,7 +141,11 @@ describe('parseRocketConfig', () => {
       if (label.includes('Text Param'))
         return 'promptedTextValue'
       if (label.includes('Confirm Param'))
-        return false // Default mock value
+        return false // Default mock value for $testParamConfirm
+      if (label.includes('OR Param A'))
+        return 'or_value' // Mock value for $orParamA
+      if (label.includes('OR Param B'))
+        return false // Mock value for $orParamB
       throw new Error(`Unexpected prompt: ${label}`)
     })
   })
@@ -131,6 +167,7 @@ describe('parseRocketConfig', () => {
     await parseRocketConfig(mockConfig, { hookable })
 
     // Assert
+    // Adjust count for new parameters
     expect(onParameterMock).toHaveBeenCalledTimes(mockConfig.parameters!.length)
     expect(onParameterMock).toHaveBeenCalledWith(expect.objectContaining({
       parameter: expect.objectContaining({ id: '$testParamText' }),
@@ -142,6 +179,14 @@ describe('parseRocketConfig', () => {
     }))
     expect(onParameterMock).toHaveBeenCalledWith(expect.objectContaining({
       parameter: expect.objectContaining({ id: '$conditionParam' }),
+      resolvedParameters: expect.any(Object),
+    }))
+    expect(onParameterMock).toHaveBeenCalledWith(expect.objectContaining({
+      parameter: expect.objectContaining({ id: '$orParamA' }),
+      resolvedParameters: expect.any(Object),
+    }))
+    expect(onParameterMock).toHaveBeenCalledWith(expect.objectContaining({
+      parameter: expect.objectContaining({ id: '$orParamB' }),
       resolvedParameters: expect.any(Object),
     }))
   })
@@ -175,6 +220,7 @@ describe('parseRocketConfig', () => {
     await parseRocketConfig(mockConfig, { hookable })
 
     // Assert
+    // Adjust count for new variables
     expect(onVariableResolverMock).toHaveBeenCalledTimes(Object.keys(mockConfig.variablesResolver!).length)
     expect(onVariableResolverMock).toHaveBeenCalledWith(expect.objectContaining({
       variableResolver: expect.arrayContaining(['{{VAR_TEXT}}', '$testParamText']),
@@ -186,6 +232,18 @@ describe('parseRocketConfig', () => {
     }))
     expect(onVariableResolverMock).toHaveBeenCalledWith(expect.objectContaining({
       variableResolver: expect.arrayContaining(['{{VAR_STATIC}}', 'staticValue']),
+      resolvedVariables: expect.any(Object),
+    }))
+    expect(onVariableResolverMock).toHaveBeenCalledWith(expect.objectContaining({
+      variableResolver: expect.arrayContaining(['{{VAR_OR_TRUE}}', expect.objectContaining({ type: '$or' })]),
+      resolvedVariables: expect.any(Object),
+    }))
+    expect(onVariableResolverMock).toHaveBeenCalledWith(expect.objectContaining({
+      variableResolver: expect.arrayContaining(['{{VAR_OR_FALSE}}', expect.objectContaining({ type: '$or' })]),
+      resolvedVariables: expect.any(Object),
+    }))
+    expect(onVariableResolverMock).toHaveBeenCalledWith(expect.objectContaining({
+      variableResolver: expect.arrayContaining(['{{VAR_OR_NESTED}}', expect.objectContaining({ type: '$or' })]),
       resolvedVariables: expect.any(Object),
     }))
   })
@@ -260,16 +318,26 @@ describe('parseRocketConfig', () => {
     await parseRocketConfig(mockConfig, { hookable })
 
     // Assert
+    // Adjust count for new excludes
     expect(onExcludeResolverMock).toHaveBeenCalledTimes(Object.keys(mockConfig.excludesResolver!).length)
     expect(onExcludeResolverMock).toHaveBeenCalledWith(expect.objectContaining({
-      excludeResolver: expect.arrayContaining(['exclude_me.txt', expect.any(Object)]), // Condition object
+      excludeResolver: expect.arrayContaining(['exclude_me.txt', expect.objectContaining({ type: 'match' })]),
       resolvedExcludes: expect.any(Object),
     }))
     expect(onExcludeResolverMock).toHaveBeenCalledWith(expect.objectContaining({
       excludeResolver: expect.arrayContaining([
         'keep_me.txt',
-        { condition: true, result: true, subject: '$testParamConfirm', type: 'match' },
-      ]), // Static boolean
+        {
+          type: 'match',
+          a: '$testParamConfirm',
+          b: true,
+          result: true,
+        },
+      ]),
+      resolvedExcludes: expect.any(Object),
+    }))
+    expect(onExcludeResolverMock).toHaveBeenCalledWith(expect.objectContaining({
+      excludeResolver: expect.arrayContaining(['exclude_or.txt', expect.objectContaining({ type: '$or' })]),
       resolvedExcludes: expect.any(Object),
     }))
   })
@@ -295,5 +363,104 @@ describe('parseRocketConfig', () => {
     expect(resolvedExcludes['keep_me.txt']).toBe(true) // Overridden by hook
   })
 
-  // TODO: Add more tests for complex conditions, fuel resolution (needs more mocking), etc.
+  it('should correctly resolve variables and file builders using the "format" condition', async () => {
+    // Arrange
+    const formatConfig: RocketConfig = {
+      parameters: [
+        { id: '$paramA', resolver: { operation: 'prompt', type: 'text', label: 'Param A' } },
+        { id: '$paramB', resolver: { operation: 'prompt', type: 'confirm', label: 'Param B', initial: true } },
+      ],
+      variablesResolver: {
+        '{{VAR_FORMAT}}': {
+          type: 'format',
+          a: '$paramA',
+          b: '$paramB',
+          result: 'A is {a}, B is {b}',
+        },
+        '{{VAR_FORMAT_LITERAL}}': {
+          type: 'format',
+          a: 'LiteralA',
+          b: false, // Literal boolean
+          result: 'Static A: {a}, Static B: {b}',
+        },
+      },
+      filesBuildResolver: {
+        'builder-format': {
+          filePath: 'formatted.txt',
+          content: {
+            type: 'format',
+            a: '$paramA',
+            b: 'LiteralB',
+            result: 'File content: {a} and {b}',
+          },
+        },
+      },
+    }
+
+    // Mock loadConfig for this specific test
+    vi.mocked(loadConfig).mockResolvedValue({
+      config: formatConfig,
+      configFile: join(tempDir, 'rocket.config.js'),
+      layers: [],
+    })
+    // Mock prompts for this specific test
+    vi.mocked(consola.prompt).mockImplementation(async (label: string) => {
+      if (label.includes('Param A'))
+        return 'ValueForA'
+      if (label.includes('Param B'))
+        return true // Mock confirm value
+      throw new Error(`Unexpected prompt: ${label}`)
+    })
+
+    // Act
+    const { resolvedParameters, resolvedVariables, resolvedFilesBuilder } = await parseRocketConfig(formatConfig)
+
+    // Assert
+    expect(resolvedParameters.$paramA).toBe('ValueForA')
+    expect(resolvedParameters.$paramB).toBe(true)
+
+    expect(resolvedVariables['{{VAR_FORMAT}}']).toBe('A is ValueForA, B is true')
+    expect(resolvedVariables['{{VAR_FORMAT_LITERAL}}']).toBe('Static A: LiteralA, Static B: false')
+
+    expect(resolvedFilesBuilder['builder-format'].content).toBe('File content: ValueForA and LiteralB')
+  })
+
+  // --- $or Condition Tests ---
+
+  it('should correctly resolve variables using the "$or" condition', async () => {
+    // Arrange - mockConfig and prompts are set in beforeEach
+
+    // Act
+    const { resolvedParameters, resolvedVariables } = await parseRocketConfig(mockConfig)
+
+    // Assert
+    // Verify parameters used in $or conditions were resolved correctly
+    expect(resolvedParameters.$orParamA).toBe('or_value')
+    expect(resolvedParameters.$orParamB).toBe(false)
+
+    // Verify $or variable resolution
+    // {{VAR_OR_TRUE}}: 'b' condition is true, so 'result' is returned
+    expect(resolvedVariables['{{VAR_OR_TRUE}}']).toBe('or_result_when_true')
+    // {{VAR_OR_FALSE}}: Both 'a' and 'b' are false, so default '' is returned
+    expect(resolvedVariables['{{VAR_OR_FALSE}}']).toBe('')
+    // {{VAR_OR_NESTED}}: Outer 'b' resolves to true (because inner 'b' is true),
+    // so outer 'result' is returned.
+    expect(resolvedVariables['{{VAR_OR_NESTED}}']).toBe('outer_or_result_when_true')
+  })
+
+  it('should correctly resolve excludes using the "$or" condition', async () => {
+    // Arrange - mockConfig and prompts are set in beforeEach
+
+    // Act
+    const { resolvedExcludes } = await parseRocketConfig(mockConfig)
+
+    // Assert
+    // exclude_or.txt: Both 'a' and 'b' conditions are false, so the $or is false.
+    // The 'result' (true) only applies if the $or condition is met.
+    // Therefore, the file should NOT be excluded.
+    expect(resolvedExcludes['exclude_or.txt']).toBe(false)
+  })
+
+  // TODO: Add more tests for complex conditions (nested a/b and subject/condition), fuel resolution, etc.
+  // TODO: Test $or within fileBuildResolver content
 })
