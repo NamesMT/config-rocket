@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.5.3
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.5.2...v0.5.3)
+
+### 🏡 Chore
+
+- Allow assemble & bundle with empty `frameDir`, `fuelDir` ([2998da7](https://github.com/namesmt/config-rocket/commit/2998da7))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.5.2
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.5.1...v0.5.2)
