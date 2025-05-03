@@ -81,6 +81,6 @@ export default defineCommand({
     const uint8 = await readAndZipFiles(filesList)
     await writeFile(output, uint8)
     const sha256 = await createSha256(uint8)
-    logger.success(`Zipped successfully: ${output}, sha256: ${sha256}`)
+    logger.success(`Zipped successfully: "${output}", sha256: "${sha256}"`)
   },
 })
