@@ -106,9 +106,15 @@ export async function simpleRocketAssemble(options: SimpleRocketAssembleOptions)
       }
 
       const fileContent = await resolveFileContent()
-        .then(content => replaceMap(content, variables))
 
-      await fileOutput(resolve(outDir, filePath), fileContent, { hookable, mergeContent: 'json' })
+      let fileContentFinal = fileContent
+      let fileContentMirror = ''
+      do {
+        fileContentMirror = fileContentFinal
+        fileContentFinal = replaceMap(fileContentMirror, variables)
+      } while (fileContentFinal !== fileContentMirror)
+
+      await fileOutput(resolve(outDir, filePath), fileContentFinal, { hookable, mergeContent: 'json' })
     }
   }
 
