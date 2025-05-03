@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.5.6
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.5.5...v0.5.6)
+
+### 🩹 Fixes
+
+- **cli/zip:** `cwd` apply error ([b180ad8](https://github.com/namesmt/config-rocket/commit/b180ad8))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.5.5
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.5.4...v0.5.5)
