@@ -1,6 +1,26 @@
 # Changelog
 
 
+## v0.5.5
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.5.4...v0.5.5)
+
+### 🩹 Fixes
+
+- **cli/zip:** `cwd` apply error ([ccebbe9](https://github.com/namesmt/config-rocket/commit/ccebbe9))
+
+### 🏡 Chore
+
+- **cli/zip:** ⚠️  Print quotes path and hash ([2eb9c8c](https://github.com/namesmt/config-rocket/commit/2eb9c8c))
+
+#### ⚠️ Breaking Changes
+
+- **cli/zip:** ⚠️  Print quotes path and hash ([2eb9c8c](https://github.com/namesmt/config-rocket/commit/2eb9c8c))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.5.4
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.5.3...v0.5.4)
