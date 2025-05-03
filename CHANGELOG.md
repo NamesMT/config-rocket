@@ -1,6 +1,19 @@
 # Changelog
 
 
+## v0.5.4
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.5.3...v0.5.4)
+
+### 🩹 Fixes
+
+- `assertsRocketCondition` => `assertsRocketResolvable` ([b9a1949](https://github.com/namesmt/config-rocket/commit/b9a1949))
+- Should be able to reference boolean parameter directly ([89e068f](https://github.com/namesmt/config-rocket/commit/89e068f))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.5.3
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.5.2...v0.5.3)
