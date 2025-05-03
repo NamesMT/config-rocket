@@ -50,7 +50,13 @@ export default defineCommand({
     const includesArr = Array.isArray(include) ? include : [include].filter(Boolean)
     const excludesArr = Array.isArray(exclude) ? exclude : [exclude].filter(Boolean)
 
-    const filesList = await glob(includesArr, { ignore: excludesArr })
+    const filesList = await glob(
+      includesArr,
+      {
+        ignore: excludesArr,
+        dot: true,
+      },
+    )
 
     if (!filesList.length)
       throw new Error('No files found to zip.')
