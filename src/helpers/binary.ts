@@ -2,12 +2,15 @@ import type { AsyncZipOptions, AsyncZippable, Zippable } from 'fflate'
 import type { RocketConfig } from '~/rocket/config'
 import { Buffer } from 'node:buffer'
 import { readdir, readFile } from 'node:fs/promises'
+import { promisify } from 'node:util'
 import { parseJSON5 } from 'confbox'
-import { Unzip, UnzipInflate, zip } from 'fflate'
+import { unzip, Unzip, UnzipInflate, zip } from 'fflate'
 import { join, relative } from 'pathe'
 import { assertsRocketConfig } from '~/rocket/config'
 
-async function zipAsync(data: AsyncZippable, options?: AsyncZipOptions): Promise<Uint8Array> {
+export const unzipAsync = promisify(unzip)
+
+export async function zipAsync(data: AsyncZippable, options?: AsyncZipOptions): Promise<Uint8Array> {
   return await new Promise<Uint8Array>((resolve, reject) => {
     zip(data, options ?? {}, (err, result) => {
       if (err)

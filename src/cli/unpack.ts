@@ -5,16 +5,14 @@ import type { RocketAssembleHooks } from '~/rocket/assemble'
 import type { ParseRocketConfigHooks } from '~/rocket/config'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { promisify } from 'node:util'
 import { consola } from 'consola'
-import { strFromU8, unzip } from 'fflate'
+import { strFromU8 } from 'fflate'
 import { join, resolve } from 'pathe'
+import { unzipAsync } from '~/helpers/binary'
 import { assertsBinarySha256 } from '~/helpers/crypto'
 import { fileOutput } from '~/helpers/fs'
 import { logger } from '~/helpers/logger'
 import { rocketAssemble } from '~/rocket/assemble'
-
-const unzipAsync = promisify(unzip)
 
 export interface RocketUnpackHooks extends Hooks {
   onExtract: (props: {
