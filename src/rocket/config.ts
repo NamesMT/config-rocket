@@ -478,7 +478,7 @@ export function assertsRocketParameterResolver(resolver: RocketConfigParameterRe
     }
 
     case 'resolvable': {
-      assertsRocketCondition(resolver.resolvable)
+      assertsRocketResolvable(resolver.resolvable)
 
       break
     }
@@ -492,7 +492,7 @@ export function assertsRocketVariablesResolver(resolver: NonNullable<RocketConfi
 
     // Value must be a string OR a valid RocketResolvable object
     if (typeof value !== 'string') {
-      assertsRocketCondition(value)
+      assertsRocketResolvable(value)
 
       if (value.type === '$or') {
         if (value.result)
@@ -518,7 +518,7 @@ export function assertsRocketFilesBuildResolver(resolver: NonNullable<RocketConf
 
     // Value must be a string OR a valid RocketResolvable object
     if (typeof value.content !== 'string') {
-      assertsRocketCondition(value.content)
+      assertsRocketResolvable(value.content)
 
       // Also ensure the resolvable's result is specifically a string
       if (typeof value.content.result !== 'string') {
@@ -533,7 +533,7 @@ export function assertsRocketExcludesResolver(resolver: NonNullable<RocketConfig
     if (typeof key !== 'string')
       throw new Error(`Invalid exclude resolver key`)
 
-    assertsRocketCondition(value)
+    assertsRocketResolvable(value)
 
     // Ensure the resolvable type is not 'format' for excludes
     // Cast to RocketResolvable to bypass stricter type inference within this check
@@ -542,19 +542,19 @@ export function assertsRocketExcludesResolver(resolver: NonNullable<RocketConfig
   }
 }
 
-export function assertsRocketCondition(resolvable: RocketResolvable): asserts resolvable is RocketResolvable {
+export function assertsRocketResolvable(resolvable: RocketResolvable): asserts resolvable is RocketResolvable {
   if (!['match', 'contain', 'not', 'format', '$or'].includes(resolvable.type))
     throw new Error(`Invalid parameter resolver resolvable type: '${resolvable.type}'`)
 
   if (resolvable.a === undefined)
     throw new Error('Invalid RocketResolvable: Missing required property "a" (or deprecated "subject").')
   if (typeof resolvable.a !== 'string')
-    assertsRocketCondition(resolvable.a) // Recursively validate nested resolvable
+    assertsRocketResolvable(resolvable.a) // Recursively validate nested resolvable
 
   if (resolvable.b === undefined)
     throw new Error('Invalid RocketResolvable: Missing required property "b" (or deprecated "condition").')
   if (typeof resolvable.b !== 'string' && typeof resolvable.b !== 'boolean')
-    assertsRocketCondition(resolvable.b) // Recursively validate nested resolvable
+    assertsRocketResolvable(resolvable.b) // Recursively validate nested resolvable
 
   // `format` resolvable requires a string result
   if (resolvable.type === 'format' && typeof resolvable.result !== 'string')
