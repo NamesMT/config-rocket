@@ -2,9 +2,10 @@ import type { Zippable } from 'fflate'
 import type { RocketConfig } from './config'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { stringifyJSON5 } from 'confbox'
-import { strToU8, zip } from 'fflate'
+import { strToU8 } from 'fflate'
 import { dirname, join, resolve } from 'pathe'
-import { addDirectoryToZip } from '~/helpers/binary'
+import { createSha256 } from '~/cli'
+import { addDirectoryToZip, zipAsync } from '~/helpers/binary'
 import { logger } from '~/helpers/logger'
 import { loadRocketConfig } from './config'
 
@@ -66,26 +67,31 @@ export async function bundleConfigPack(options: bundleConfigPackOptions) {
 
   const outputPath = join(outDir, `${outName ?? 'rocket-bundle'}.zip`)
 
-  await createBundle({
+  const data = await createZipBundle({
     loadedRocketConfig,
     frameDir,
     fuelDir,
     referencedFuels,
-    outputPath,
   })
+  await mkdir(dirname(outputPath), { recursive: true })
+  await writeFile(outputPath, data)
 
-  logger.success(`Rocket bundled: ${outputPath}`)
+  logger.success(`🚀 Bundled: ${outputPath}, sha256: ${await createSha256(outputPath)}`)
 }
 
-interface createBundleOptions {
+interface createZipBundleOptions {
   loadedRocketConfig: RocketConfig
   frameDir: string
   fuelDir: string
   referencedFuels: string[]
-  outputPath: string
 }
-async function createBundle(options: createBundleOptions): Promise<void> {
-  const { loadedRocketConfig, frameDir, fuelDir, referencedFuels, outputPath } = options
+export async function createZipBundle(options: createZipBundleOptions): Promise<Uint8Array> {
+  const {
+    loadedRocketConfig,
+    frameDir,
+    fuelDir,
+    referencedFuels,
+  } = options
 
   const zipData: Zippable = {}
 
@@ -121,23 +127,6 @@ async function createBundle(options: createBundleOptions): Promise<void> {
     }
   }
 
-  // 4. Create and write the zip file asynchronously
-  await new Promise<void>((resolvePromise, rejectPromise) => {
-    zip(zipData, async (err, data) => {
-      if (err) {
-        logger.error(`Error during zip operation for ${outputPath}:`, err)
-        return rejectPromise(new Error('Failed during zip operation.'))
-      }
-
-      // Create the output directory if it doesn't exist
-      await mkdir(dirname(outputPath), { recursive: true })
-
-      await writeFile(outputPath, data)
-        .then(() => resolvePromise())
-        .catch((writeErr) => {
-          logger.error(`Error writing zip file (${outputPath}):`, writeErr)
-          rejectPromise(new Error('Failed to write zip bundle.'))
-        })
-    })
-  })
+  return await zipAsync(zipData)
+    .catch(() => { throw new Error('Failed during zip operation.') })
 }
