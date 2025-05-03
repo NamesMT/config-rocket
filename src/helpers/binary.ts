@@ -5,7 +5,7 @@ import { readdir, readFile } from 'node:fs/promises'
 import { promisify } from 'node:util'
 import { parseJSON5 } from 'confbox'
 import { unzip, Unzip, UnzipInflate, zip } from 'fflate'
-import { join, relative } from 'pathe'
+import { join, relative, resolve } from 'pathe'
 import { assertsRocketConfig } from '~/rocket/config'
 
 export const unzipAsync = promisify(unzip)
@@ -20,12 +20,15 @@ export async function zipAsync(data: AsyncZippable, options?: AsyncZipOptions): 
   })
 }
 
-export async function readAndZipFiles(filesList: string[]) {
+export async function readAndZipFiles(filesList: string[], options?: { cwd?: string }): Promise<Uint8Array> {
+  const {
+    cwd = '',
+  } = options ?? {}
   // Note: will see if we should use streaming API or not, for now, we specifically targets `config-rocket` users which should be small files and streaming is not yet necessary.
   const filesListWithData: Record<string, Uint8Array> = {}
   // Note: using this approach to read all files at once.
   await Promise.all(filesList.map(async (filePath) => {
-    const fileContent = await readFile(filePath)
+    const fileContent = await readFile(resolve(cwd, filePath))
     filesListWithData[filePath] = fileContent
   }))
 
