@@ -24,7 +24,7 @@ export interface bundleConfigPackOptions {
   /**
    * Path to the rocket frame directory.
    */
-  frameDir: string
+  frameDir?: string
 
   /**
    * Path to the rocket config file.
@@ -36,7 +36,7 @@ export interface bundleConfigPackOptions {
   /**
    * Path to the rocket fuel directory.
    */
-  fuelDir: string
+  fuelDir?: string
 
   /**
    * Output directory.
@@ -59,7 +59,10 @@ export async function bundleConfigPack(options: bundleConfigPackOptions) {
     outName,
   } = options
 
-  const rocketConfigPath = rocketConfig ?? resolve(frameDir, '../rocket.config.ts')
+  const rocketConfigPath = rocketConfig ?? (frameDir && resolve(frameDir, '../rocket.config.ts'))
+
+  if (!rocketConfigPath)
+    throw new Error('`rocketConfig` is required when `frameDir` is not specified')
 
   const loadedRocketConfig = await loadRocketConfig(rocketConfigPath)
 
@@ -81,8 +84,8 @@ export async function bundleConfigPack(options: bundleConfigPackOptions) {
 
 interface createZipBundleOptions {
   loadedRocketConfig: RocketConfig
-  frameDir: string
-  fuelDir: string
+  frameDir?: string
+  fuelDir?: string
   referencedFuels: string[]
 }
 export async function createZipBundle(options: createZipBundleOptions): Promise<Uint8Array> {
@@ -106,27 +109,28 @@ export async function createZipBundle(options: createZipBundleOptions): Promise<
   }
 
   // 2. Add frame directory
-  try {
+  if (frameDir) {
     await addDirectoryToZip(zipData, frameDir, 'frame', frameDir)
-  }
-  catch (error) {
-    logger.error(`Error adding frame directory (${frameDir}):`, error)
-    throw new Error('Failed to bundle frame directory.')
+      .catch(() => { throw new Error('Failed to bundle frame directory.') })
   }
 
   // 3. Add referenced fuels
-  for (const fuelPath of referencedFuels) {
-    const filePath = join(fuelDir, fuelPath)
-    const zipPath = join('fuel', fuelPath)
-    try {
-      const content = await readFile(filePath)
-      zipData[zipPath] = content
-    }
-    catch {
-      throw new Error(`Failed to read fuel file: ${filePath}`)
+  if (referencedFuels.length) {
+    if (!fuelDir)
+      throw new Error('Detected fuels in the config, but no "fuelDir" was provided')
+
+    for (const fuelPath of referencedFuels) {
+      const filePath = join(fuelDir, fuelPath)
+      const zipPath = join('fuel', fuelPath)
+      try {
+        const content = await readFile(filePath)
+        zipData[zipPath] = content
+      }
+      catch {
+        throw new Error(`Failed to read fuel file: ${filePath}`)
+      }
     }
   }
 
   return await zipAsync(zipData)
-    .catch(() => { throw new Error('Failed during zip operation.') })
 }

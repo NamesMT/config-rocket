@@ -7,6 +7,7 @@ import * as confbox from 'confbox'
 import * as fflate from 'fflate'
 import * as path from 'pathe'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import * as binaryHelpers from '~/helpers/binary'
 import { logger } from '~/helpers/logger'
 import { bundleConfigPack, extractReferencedFuels } from '~/rocket/bundle'
 import * as configLoader from '~/rocket/config'
@@ -14,6 +15,7 @@ import * as configLoader from '~/rocket/config'
 // --- Mocking Dependencies ---
 vi.mock('node:fs/promises')
 vi.mock('fflate')
+vi.mock('~/helpers/binary')
 vi.mock('~/rocket/config')
 vi.mock('confbox')
 vi.mock('~/helpers/logger')
@@ -67,12 +69,14 @@ describe('extractReferencedFuels', () => {
 describe('bundleConfigPack', () => {
   const mockFs = vi.mocked(fs)
   const mockFflate = vi.mocked(fflate)
+  const mockBinaryHelpers = vi.mocked(binaryHelpers)
   const mockConfigLoader = vi.mocked(configLoader)
   const mockConfbox = vi.mocked(confbox)
   const mockLogger = vi.mocked(logger)
 
   const baseDir = '/workspace'
   const frameDir = path.join(baseDir, 'frame')
+  const frameSubDir = path.join(frameDir, 'subdir')
   const fuelDir = path.join(baseDir, 'fuel')
   const outDir = path.join(baseDir, 'out')
   const defaultRocketConfigPath = path.resolve(frameDir, '../rocket.config.ts')
@@ -87,13 +91,10 @@ describe('bundleConfigPack', () => {
     mockFs.readFile.mockRejectedValue(new Error('readFile not mocked for this path')) // Default readFile to error
     mockFs.readdir.mockResolvedValue([]) // Default readdir to empty
     mockFs.writeFile.mockResolvedValue(undefined) // Default writeFile to success
-    mockFflate.zip.mockImplementation((_data, cb) => {
-      cb(null, new Uint8Array([1, 2, 3])) // Mock successful zip callback
-      // Return a dummy terminator function as required by fflate's async zip type
-      return { terminate: vi.fn() } as unknown as fflate.AsyncTerminable
-    })
     // Mock strToU8 using TextEncoder for simplicity in tests
     mockFflate.strToU8.mockImplementation(str => new TextEncoder().encode(str))
+    mockBinaryHelpers.zipAsync.mockResolvedValue(new Uint8Array([1, 2, 3]))
+    mockBinaryHelpers.addDirectoryToZip.mockResolvedValue(undefined)
   })
 
   it('should bundle config, frame, and referenced fuels correctly', async () => {
@@ -114,7 +115,7 @@ describe('bundleConfigPack', () => {
     mockFs.readdir.mockImplementation(async (dirPath: PathLike) => {
       const receivedPath = path.normalize(dirPath.toString())
       const expectedFrameDir = path.normalize(frameDir)
-      const expectedSubDir = path.normalize(path.join(frameDir, 'subdir'))
+      const expectedSubDir = path.normalize(frameSubDir)
 
       if (receivedPath === expectedFrameDir) {
         return [
@@ -135,7 +136,7 @@ describe('bundleConfigPack', () => {
     mockFs.readFile.mockImplementation(async (filePath: PathLike | fs.FileHandle) => {
       const receivedPath = path.normalize(filePath.toString())
       const expectedFrameFile = path.normalize(path.join(frameDir, 'framefile.js'))
-      const expectedNestedFrameFile = path.normalize(path.join(frameDir, 'subdir/nestedframe.txt'))
+      const expectedNestedFrameFile = path.normalize(path.join(frameSubDir, 'nestedframe.txt'))
       const expectedMainFuel = path.normalize(path.join(fuelDir, 'main.txt'))
       const expectedNestedFuel = path.normalize(path.join(fuelDir, 'subdir/nested.txt'))
 
@@ -155,6 +156,14 @@ describe('bundleConfigPack', () => {
       throw new Error(`[Test Mock Error] Unexpected readFile call: ${receivedPath}`)
     })
 
+    // Mock addDirectoryToZip specifically for this test's file structure
+    mockBinaryHelpers.addDirectoryToZip.mockImplementation(async (zipDataObj: Zippable, dirPath: string) => {
+      if (path.normalize(dirPath) === path.normalize(frameDir)) {
+        zipDataObj['frame/framefile.js'] = Buffer.from('frame content')
+        zipDataObj['frame/subdir/nestedframe.txt'] = Buffer.from('nested frame content')
+      }
+    })
+
     // --- Act ---
     await bundleConfigPack(commonOptions)
 
@@ -166,20 +175,17 @@ describe('bundleConfigPack', () => {
     expect(mockConfbox.stringifyJSON5).toHaveBeenCalledWith(mockLoadedConfig, { space: 2 })
 
     // 3. File system reads (readdir and readFile)
-    expect(mockFs.readdir).toHaveBeenCalledWith(frameDir, { withFileTypes: true })
-    expect(mockFs.readdir).toHaveBeenCalledWith(path.join(frameDir, 'subdir'), { withFileTypes: true })
-    expect(mockFs.readFile).toHaveBeenCalledWith(path.join(frameDir, 'framefile.js'))
-    expect(mockFs.readFile).toHaveBeenCalledWith(path.join(frameDir, 'subdir/nestedframe.txt'))
+    // addDirectoryToZip handles the recursive reads, so we check its calls
+    expect(mockBinaryHelpers.addDirectoryToZip).toHaveBeenCalledWith(expect.any(Object), frameDir, 'frame', frameDir)
     expect(mockFs.readFile).toHaveBeenCalledWith(path.join(fuelDir, 'main.txt')) // Fuel file
     expect(mockFs.readFile).toHaveBeenCalledWith(path.join(fuelDir, 'subdir/nested.txt')) // Nested fuel file
 
     // 4. Zipping
-    expect(mockFflate.zip).toHaveBeenCalledTimes(1)
-    const zipCall = mockFflate.zip.mock.calls[0]
+    expect(mockBinaryHelpers.zipAsync).toHaveBeenCalledTimes(1)
+    const zipCall = mockBinaryHelpers.zipAsync.mock.calls[0]
     const zipData = zipCall[0] as Zippable // Data passed to zip
 
     // Check zip data structure
-    expect(zipData['rocket.config.json5']).toEqual(mockFflate.strToU8(mockConfigJson5))
     expect(zipData['frame/framefile.js']).toEqual(Buffer.from('frame content'))
     expect(zipData['frame/subdir/nestedframe.txt']).toEqual(Buffer.from('nested frame content'))
     expect(zipData['fuel/main.txt']).toEqual(Buffer.from('main fuel content'))
@@ -189,7 +195,7 @@ describe('bundleConfigPack', () => {
     expect(mockFs.writeFile).toHaveBeenCalledWith(outputZipPath, expect.any(Uint8Array)) // Check path and type
 
     // 6. Logging
-    expect(mockLogger.success).toHaveBeenCalledWith(`Rocket bundled: ${outputZipPath}`)
+    expect(mockLogger.success).toHaveBeenCalledWith(expect.stringContaining(`🚀 Bundled: "${outputZipPath}"`))
   })
 
   it('should handle no referenced fuels', async () => {
@@ -219,25 +225,31 @@ describe('bundleConfigPack', () => {
       throw new Error(`[Test Mock Error] Unexpected readFile call: ${receivedPath}`)
     })
 
+    // Mock addDirectoryToZip specifically for this test's file structure
+    mockBinaryHelpers.addDirectoryToZip.mockImplementation(async (zipDataObj: Zippable, dirPath: string) => {
+      if (path.normalize(dirPath) === path.normalize(frameDir)) {
+        zipDataObj['frame/framefile.js'] = Buffer.from('frame content')
+      }
+    })
+
     // --- Act ---
     await bundleConfigPack(commonOptions)
 
     // --- Assert ---
     expect(mockConfigLoader.loadRocketConfig).toHaveBeenCalledWith(defaultRocketConfigPath)
     expect(mockConfbox.stringifyJSON5).toHaveBeenCalledWith(mockLoadedConfig, { space: 2 })
-    expect(mockFs.readdir).toHaveBeenCalledWith(frameDir, { withFileTypes: true })
-    expect(mockFs.readFile).toHaveBeenCalledWith(path.join(frameDir, 'framefile.js'))
+    expect(mockBinaryHelpers.addDirectoryToZip).toHaveBeenCalledWith(expect.any(Object), frameDir, 'frame', frameDir)
     // Ensure no reads were attempted within the fuel directory
     expect(mockFs.readFile).not.toHaveBeenCalledWith(expect.stringContaining(path.normalize(fuelDir))) // Ensure no reads in fuel dir
 
-    expect(mockFflate.zip).toHaveBeenCalledTimes(1)
-    const zipData = mockFflate.zip.mock.calls[0][0] as Zippable
-    expect(zipData['rocket.config.json5']).toBeDefined()
+    expect(mockBinaryHelpers.zipAsync).toHaveBeenCalledTimes(1)
+    const zipData = mockBinaryHelpers.zipAsync.mock.calls[0][0] as Zippable
+    expect(zipData['rocket.config.json5']).toEqual(mockFflate.strToU8(mockConfigJson5))
     expect(zipData['frame/framefile.js']).toBeDefined()
     expect(Object.keys(zipData).some(k => k.startsWith('fuel/'))).toBe(false) // Assert no fuel entries in zip
 
     expect(mockFs.writeFile).toHaveBeenCalledWith(outputZipPath, expect.any(Uint8Array))
-    expect(mockLogger.success).toHaveBeenCalledWith(`Rocket bundled: ${outputZipPath}`)
+    expect(mockLogger.success).toHaveBeenCalledWith(expect.stringContaining(`🚀 Bundled: "${outputZipPath}"`))
   })
 
   it('should use provided rocketConfig path', async () => {
@@ -302,7 +314,7 @@ describe('bundleConfigPack', () => {
       .toThrow(`Failed to read fuel file: ${path.normalize(expectedFuelPath)}`) // Check the specific error message (normalized path)
 
     // Assert that zip and write were not called due to the error
-    expect(mockFflate.zip).not.toHaveBeenCalled()
+    expect(mockBinaryHelpers.zipAsync).not.toHaveBeenCalled()
     expect(mockFs.writeFile).not.toHaveBeenCalled()
     expect(mockLogger.success).not.toHaveBeenCalled()
   })
@@ -310,7 +322,7 @@ describe('bundleConfigPack', () => {
   it('should throw error if zipping fails', async () => {
     // --- Arrange ---
     const zipError: fflate.FlateError = Object.assign(new Error('Zip failed'), { code: 1 }) // Simulate an fflate error object
-
+    mockBinaryHelpers.zipAsync.mockRejectedValue(zipError)
     mockConfigLoader.loadRocketConfig.mockResolvedValue({ variablesResolver: {} })
     mockConfbox.stringifyJSON5.mockReturnValue('{}')
     // Mock readdir for this test (empty frameDir, using path normalization)
@@ -325,16 +337,10 @@ describe('bundleConfigPack', () => {
     })
     // No readFile mock needed as frameDir is empty
 
-    // Mock fflate.zip to call its callback with an error
-    mockFflate.zip.mockImplementation((_data, cb) => {
-      cb(zipError, new Uint8Array())
-      return { terminate: vi.fn() } as unknown as fflate.AsyncTerminable
-    })
-
     // --- Act & Assert ---
     await expect(bundleConfigPack(commonOptions))
       .rejects
-      .toThrow('Failed during zip operation.') // Check specific error message
+      .toThrow(zipError)
 
     // Assert that writeFile was not called
     expect(mockFs.writeFile).not.toHaveBeenCalled()
@@ -364,11 +370,7 @@ describe('bundleConfigPack', () => {
     // readFile should NOT be called (no frame/fuel files), mock it to throw if it is.
     mockFs.readFile.mockRejectedValue(new Error('[Test Mock Error] readFile should not have been called in the "writing zip file fails" test'))
 
-    // Mock zip to succeed, so we reach the writeFile step
-    mockFflate.zip.mockImplementation((_data, cb) => {
-      cb(null, new Uint8Array([1, 2, 3]))
-      return { terminate: vi.fn() } as unknown as fflate.AsyncTerminable
-    })
+    // zipAsync mock already defaults to success in beforeEach
 
     // Mock writeFile to throw the simulated error
     mockFs.writeFile.mockRejectedValue(writeError)
@@ -376,8 +378,7 @@ describe('bundleConfigPack', () => {
     // --- Act & Assert ---
     await expect(bundleConfigPack(commonOptions))
       .rejects
-      .toThrow('Failed to write zip bundle.') // Check specific error message
-
+      .toThrow(writeError)
     // Assert logger was not called
     expect(mockLogger.success).not.toHaveBeenCalled()
   })

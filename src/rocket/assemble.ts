@@ -22,7 +22,7 @@ export interface SimpleRocketAssembleOptions {
   /**
    * Path to the rocket frame directory.
    */
-  frameDir: string
+  frameDir?: string
 
   /**
    * The variables map to put into the frame.
@@ -59,7 +59,7 @@ export async function simpleRocketAssemble(options: SimpleRocketAssembleOptions)
     hookable,
   } = options
 
-  const frameFiles = await glob(resolve(frameDir, '**'), { dot: true, cwd: frameDir })
+  const frameFiles = !frameDir ? [] : await glob(resolve(frameDir, '**'), { dot: true, cwd: frameDir })
 
   async function processFiles(files: Array<{
     source: 'frame' | 'filesBuilder'
@@ -97,7 +97,7 @@ export async function simpleRocketAssemble(options: SimpleRocketAssembleOptions)
       const resolveFileContent = async () => {
         switch (file.source) {
           case 'frame':
-            return await readFile(resolve(frameDir, file.filePath), { encoding: 'utf8' })
+            return await readFile(resolve(frameDir!, file.filePath), { encoding: 'utf8' })
           case 'filesBuilder':
             return file.content!
           default:
@@ -132,11 +132,6 @@ export async function simpleRocketAssemble(options: SimpleRocketAssembleOptions)
 
 export interface RocketAssembleOptions {
   /**
-   * Path to the rocket frame directory.
-   */
-  frameDir: string
-
-  /**
    * Path to the rocket config file.
    *
    * @default `rocket.config.ts` in parent of `frameDir`.
@@ -144,9 +139,14 @@ export interface RocketAssembleOptions {
   rocketConfig?: string
 
   /**
+   * Path to the rocket frame directory.
+   */
+  frameDir?: string
+
+  /**
    * Path to the rocket fuel directory.
    */
-  fuelDir: string
+  fuelDir?: string
 
   /**
    * The
@@ -171,17 +171,17 @@ export async function rocketAssemble(options: RocketAssembleOptions) {
     hookable,
   } = options
 
-  const rocketConfigPath = rocketConfig ?? resolve(frameDir, '../rocket.config')
+  const rocketConfigPath = rocketConfig ?? (frameDir && resolve(frameDir, '../rocket.config'))
+
+  if (!rocketConfigPath)
+    throw new Error('`rocketConfig` is required when `frameDir` is not specified')
 
   const { resolvedVariables, resolvedExcludes, resolvedFilesBuilder } = await parseRocketConfig(rocketConfigPath, { hookable })
 
-  const fueledVariables = await supplyFuel(resolvedVariables, fuelDir)
-  const fueledFilesBuilder: Record<string, { filePath: string, content: string }> = await supplyFuelToResolvedFilesBuilder(resolvedFilesBuilder, fuelDir)
-
   await simpleRocketAssemble({
     frameDir,
-    filesBuilder: fueledFilesBuilder,
-    variables: fueledVariables,
+    filesBuilder: fuelDir ? await supplyFuelToResolvedFilesBuilder(resolvedFilesBuilder, fuelDir) : resolvedFilesBuilder,
+    variables: fuelDir ? await supplyFuel(resolvedVariables, fuelDir) : resolvedVariables,
     excludes: resolvedExcludes,
     outDir,
     hookable,
