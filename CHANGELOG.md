@@ -1,6 +1,23 @@
 # Changelog
 
 
+## v0.5.0
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.4.7...v0.5.0)
+
+### 🚀 Enhancements
+
+- Allow recursive variables replacement ([c8725dd](https://github.com/namesmt/config-rocket/commit/c8725dd))
+- **config:** ⚠️  Major update (read desc) ([f77150c](https://github.com/namesmt/config-rocket/commit/f77150c))
+
+#### ⚠️ Breaking Changes
+
+- **config:** ⚠️  Major update (read desc) ([f77150c](https://github.com/namesmt/config-rocket/commit/f77150c))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.4.7
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.4.6...v0.4.7)
