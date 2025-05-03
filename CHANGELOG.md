@@ -1,6 +1,22 @@
 # Changelog
 
 
+## v0.4.7
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.4.6...v0.4.7)
+
+### 🚀 Enhancements
+
+- **cli/zip:** Add `cwd` arg ([a47c315](https://github.com/namesmt/config-rocket/commit/a47c315))
+
+### 🩹 Fixes
+
+- Should be able to zip dotfiles ([11829f6](https://github.com/namesmt/config-rocket/commit/11829f6))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.4.6
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.4.5...v0.4.6)
