@@ -36,6 +36,10 @@ export default defineCommand({
       type: 'boolean',
       description: 'Run the command without prompting',
     },
+    cwd: {
+      type: 'string',
+      description: 'The working directory for the process',
+    },
   },
   async run({ args }) {
     const {
@@ -43,6 +47,7 @@ export default defineCommand({
       exclude,
       output,
       force,
+      cwd,
     } = args
 
     // Note: `citty` supports any args to might be an array if multiple are passed but currently `citty` types does not have info about it, so we're using the following to always cast it to array anyway.
@@ -55,6 +60,7 @@ export default defineCommand({
       {
         ignore: excludesArr,
         dot: true,
+        cwd,
       },
     )
 
