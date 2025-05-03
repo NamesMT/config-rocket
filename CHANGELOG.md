@@ -1,6 +1,27 @@
 # Changelog
 
 
+## v0.5.1
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.5.0...v0.5.1)
+
+### 🚀 Enhancements
+
+- Refactor and exports `createZipBundle`, print hash on `bundleConfigPack` ([ddfc129](https://github.com/namesmt/config-rocket/commit/ddfc129))
+
+### 🏡 Chore
+
+- **cli/hash:** ⚠️  Output same line for easier pipe match ([fe351c3](https://github.com/namesmt/config-rocket/commit/fe351c3))
+- Exports  `unzipAsync`, `zipAsync` ([971bbd7](https://github.com/namesmt/config-rocket/commit/971bbd7))
+
+#### ⚠️ Breaking Changes
+
+- **cli/hash:** ⚠️  Output same line for easier pipe match ([fe351c3](https://github.com/namesmt/config-rocket/commit/fe351c3))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.5.0
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.4.7...v0.5.0)
