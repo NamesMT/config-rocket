@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.5.8
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.5.7...v0.5.8)
+
+### 🩹 Fixes
+
+- **unpack:** Hooks should not be called for tmp `fileOutput` ([87bd3a5](https://github.com/namesmt/config-rocket/commit/87bd3a5))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.5.7
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.5.6...v0.5.7)
