@@ -88,7 +88,7 @@ export async function unpackFromUint8(uint8: Uint8Array, options?: UnpackOptions
       await fileOutput(
         isRocketAssembly ? join(tmpDir, key) : join(cwd, key),
         strFromU8(value),
-        { hookable },
+        isRocketAssembly ? { hookable } : undefined,
       )
     }
     logger.success('Extracted successfully.')
