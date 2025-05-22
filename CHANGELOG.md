@@ -1,6 +1,22 @@
 # Changelog
 
 
+## v0.6.0
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.5.8...v0.6.0)
+
+### 🚀 Enhancements
+
+- **fs/fileOutput:** ⚠️  Support merge for more file types, more powerful hooks ([4fd0b95](https://github.com/namesmt/config-rocket/commit/4fd0b95))
+
+#### ⚠️ Breaking Changes
+
+- **fs/fileOutput:** ⚠️  Support merge for more file types, more powerful hooks ([4fd0b95](https://github.com/namesmt/config-rocket/commit/4fd0b95))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.5.8
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.5.7...v0.5.8)
