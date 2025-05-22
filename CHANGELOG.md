@@ -1,6 +1,22 @@
 # Changelog
 
 
+## v0.6.1
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.6.0...v0.6.1)
+
+### 🌊 Types
+
+- Fix minor type error in test ([15ca382](https://github.com/namesmt/config-rocket/commit/15ca382))
+
+### 🏡 Chore
+
+- Update deps ([71f4f51](https://github.com/namesmt/config-rocket/commit/71f4f51))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.6.0
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.5.8...v0.6.0)
