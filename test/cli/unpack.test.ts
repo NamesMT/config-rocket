@@ -81,7 +81,7 @@ describe('unpackFromUrl', () => {
     delete globalThis.fetch
   })
 
-  it('should download, extract, and assemble a valid rocket config pack', async () => {
+  it('should extract, and assemble a valid rocket config pack', async () => {
     // Arrange
     const mockZipData = await createMockZip({
       'rocket.config.json5': '{ "name": "test-pack" }',
@@ -113,9 +113,9 @@ describe('unpackFromUrl', () => {
     expect(vi.mocked(await import('node:fs/promises')).mkdtemp).toHaveBeenCalled()
     expect(mockUnzip).toHaveBeenCalled()
     expect(fileOutput).toHaveBeenCalledTimes(3)
-    expect(fileOutput).toHaveBeenCalledWith(`${expectedTmpDir}/rocket.config.json5`, '{ "name": "test-pack" }', { hookable: undefined })
-    expect(fileOutput).toHaveBeenCalledWith(`${expectedTmpDir}/frame/file1.txt`, 'frame content', { hookable: undefined })
-    expect(fileOutput).toHaveBeenCalledWith(`${expectedTmpDir}/fuel/file2.txt`, 'fuel content', { hookable: undefined })
+    expect(fileOutput).toHaveBeenCalledWith(`${expectedTmpDir}/rocket.config.json5`, '{ "name": "test-pack" }', undefined)
+    expect(fileOutput).toHaveBeenCalledWith(`${expectedTmpDir}/frame/file1.txt`, 'frame content', undefined)
+    expect(fileOutput).toHaveBeenCalledWith(`${expectedTmpDir}/fuel/file2.txt`, 'fuel content', undefined)
     expect(logger.success).toHaveBeenCalledWith('Extracted successfully.')
     expect(logger.start).toHaveBeenCalledWith('Assembling the config according to `rocketConfig`...')
     expect(rocketAssemble).toHaveBeenCalledWith({
