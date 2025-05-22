@@ -79,7 +79,7 @@ export async function bundleConfigPack(options: bundleConfigPackOptions) {
   await mkdir(dirname(outputPath), { recursive: true })
   await writeFile(outputPath, data)
 
-  logger.success(`🚀 Bundled: "${outputPath}", sha256: "${await createSha256(outputPath)}"`)
+  logger.success(`🚀 Bundled: "${outputPath}", sha256: "${await createSha256(data)}"`)
 }
 
 interface createZipBundleOptions {
