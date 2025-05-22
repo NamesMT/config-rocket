@@ -1,5 +1,0 @@
-onlyBuiltDependencies:
-  - esbuild
-  - simple-git-hooks
-
-ignoreWorkspaceRootCheck: true
