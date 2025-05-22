@@ -119,14 +119,14 @@ describe('bundleConfigPack', () => {
 
       if (receivedPath === expectedFrameDir) {
         return [
-          { name: 'framefile.js', isFile: () => true, isDirectory: () => false } as Dirent,
-          { name: 'subdir', isFile: () => false, isDirectory: () => true } as Dirent,
-        ]
+          { name: 'framefile.js', isFile: () => true, isDirectory: () => false },
+          { name: 'subdir', isFile: () => false, isDirectory: () => true },
+        ] as Dirent<any>[]
       }
       if (receivedPath === expectedSubDir) {
         return [
-          { name: 'nestedframe.txt', isFile: () => true, isDirectory: () => false } as Dirent,
-        ]
+          { name: 'nestedframe.txt', isFile: () => true, isDirectory: () => false },
+        ] as Dirent<any>[]
       }
       logger.warn(`[Test Mock Warning] Unhandled readdir path: ${receivedPath}`)
       return [] // Default empty
@@ -210,7 +210,7 @@ describe('bundleConfigPack', () => {
       const receivedPath = path.normalize(dirPath.toString())
       const expectedFrameDir = path.normalize(frameDir)
       if (receivedPath === expectedFrameDir) {
-        return [{ name: 'framefile.js', isFile: () => true, isDirectory: () => false } as Dirent]
+        return [{ name: 'framefile.js', isFile: () => true, isDirectory: () => false }] as Dirent<any>[]
       }
       logger.warn(`[Test Mock Warning] Unhandled readdir path: ${receivedPath}`)
       return []
