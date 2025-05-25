@@ -76,10 +76,12 @@ export async function bundleConfigPack(options: bundleConfigPackOptions) {
     fuelDir,
     referencedFuels,
   })
+  const hash = await createSha256(data)
   await mkdir(dirname(outputPath), { recursive: true })
   await writeFile(outputPath, data)
 
-  logger.success(`🚀 Bundled: "${outputPath}", sha256: "${await createSha256(data)}"`)
+  logger.success(`🚀 Bundled: "${outputPath}", sha256: "${hash}"`)
+  return { data, hash }
 }
 
 interface createZipBundleOptions {
