@@ -1,6 +1,26 @@
 # Changelog
 
 
+## v0.6.3
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.6.2...v0.6.3)
+
+### 🩹 Fixes
+
+- Commands exports ([a4aae25](https://github.com/namesmt/config-rocket/commit/a4aae25))
+
+### 💅 Refactors
+
+- **cli/hash:** ⚠️  Now returns JSON parsable result ([5d65a41](https://github.com/namesmt/config-rocket/commit/5d65a41))
+
+#### ⚠️ Breaking Changes
+
+- **cli/hash:** ⚠️  Now returns JSON parsable result ([5d65a41](https://github.com/namesmt/config-rocket/commit/5d65a41))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.6.2
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.6.1...v0.6.2)
