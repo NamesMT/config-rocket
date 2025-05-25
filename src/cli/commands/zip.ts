@@ -5,7 +5,7 @@ import { glob } from 'tinyglobby'
 import { createSha256, readAndZipFiles } from '~/cli'
 import { logger } from '~/helpers/logger'
 
-export default defineCommand({
+export const zipCommand = defineCommand({
   meta: {
     name: 'zip',
     description: 'Simple utility to help you zip anything.',

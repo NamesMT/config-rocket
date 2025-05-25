@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises'
 import { defineCommand } from 'citty'
 import { logger } from '~/helpers/logger'
 
-export default defineCommand({
+export const hashCommand = defineCommand({
   meta: {
     name: 'hash',
     description: 'Simple utility to help you get the hash of a file.',

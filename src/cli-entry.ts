@@ -42,8 +42,8 @@ const main = defineCommand({
     },
   },
   subCommands: {
-    zip: () => import('~/cli/commands/zip').then(r => r.default),
-    hash: () => import('~/cli/commands/hash').then(r => r.default),
+    zip: () => import('~/cli/commands/zip').then(r => r.zipCommand),
+    hash: () => import('~/cli/commands/hash').then(r => r.hashCommand),
   },
   setup(context) {
     // Creates data context for main comand

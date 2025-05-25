@@ -1,4 +1,5 @@
-export * from '~/cli/commands'
+export * from '~/cli/commands/hash'
+export * from '~/cli/commands/zip'
 export * from '~/cli/gh-repo'
 export * from '~/cli/unpack'
 export * from '~/helpers/binary'
