@@ -1,6 +1,22 @@
 # Changelog
 
 
+## v0.6.4
+
+[compare changes](https://github.com/namesmt/config-rocket/compare/v0.6.3...v0.6.4)
+
+### 🚀 Enhancements
+
+- **bundleConfigPack:** Now returns `{ data, hash }` ([3737f7a](https://github.com/namesmt/config-rocket/commit/3737f7a))
+
+### 🏡 Chore
+
+- **cli/zip:** Try mkdir before writeFile ([d9b7d30](https://github.com/namesmt/config-rocket/commit/d9b7d30))
+
+### ❤️ Contributors
+
+- NamesMT ([@NamesMT](https://github.com/NamesMT))
+
 ## v0.6.3
 
 [compare changes](https://github.com/namesmt/config-rocket/compare/v0.6.2...v0.6.3)
