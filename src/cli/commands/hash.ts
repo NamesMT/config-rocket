@@ -1,8 +1,8 @@
 import type { BinaryToTextEncoding } from 'node:crypto'
 import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
+import { clearUndefined } from '@namesmt/utils'
 import { defineCommand } from 'citty'
-import { logger } from '~/helpers/logger'
 
 export const hashCommand = defineCommand({
   meta: {
@@ -38,14 +38,27 @@ export const hashCommand = defineCommand({
       outputFormat,
     } = args
 
-    console.log({ input, algorithm, outputFormat })
+    const result = {
+      input,
+      algorithm,
+      outputFormat,
+      error: undefined as string | undefined,
+      output: undefined as string | undefined,
+    }
 
-    const fileBuffer = await readFile(input)
+    try {
+      const fileBuffer = await readFile(input)
 
-    const hasher = createHash(algorithm)
-    hasher.update(fileBuffer)
-    const output = hasher.digest(outputFormat as BinaryToTextEncoding)
+      const hasher = createHash(algorithm)
+      hasher.update(fileBuffer)
+      result.output = hasher.digest(outputFormat as BinaryToTextEncoding)
+    }
+    catch (e) {
+      result.error = (e instanceof Error) ? e.message : String(e)
+    }
 
-    logger.success(`Hashed: "${output}"`)
+    clearUndefined(result)
+
+    console.log(result)
   },
 })
